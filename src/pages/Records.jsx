@@ -68,29 +68,6 @@ export default function PageRecords({ setPage }) {
 
                 {/* Right: Academic Records */}
                 <div className="rec-right">
-
-                    {/* Academic Milestones */}
-                    <div className="card" style={{ padding: 20 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
-                            <span style={{ color: 'var(--cya)', fontSize: 18 }}>🎓</span>
-                            <span style={{ fontWeight: 800, fontSize: 15 }}>Academic Milestones</span>
-                        </div>
-                        <div className="milestones-grid">
-                            {MILESTONES.map(m => (
-                                <div key={m.name} className="mcard">
-                                    <div className="mcard-top" style={{ borderLeft: `3px solid ${m.color}` }}>
-                                        <div className="m-name">{m.name}</div>
-                                        <div className="m-date">{m.date}</div>
-                                        <span className="mst" style={{ color: m.color, fontSize: 10, fontWeight: 800 }}>{m.st}</span>
-                                    </div>
-                                    <div className="mbar">
-                                        <div className="mfill" style={{ width: `${m.pct}%`, background: m.color }} />
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
                     {/* Semester Transcript */}
                     <div className="card">
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 20px', borderBottom: '1px solid var(--border)' }}>

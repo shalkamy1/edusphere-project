@@ -4520,3 +4520,216 @@ button:active::after {
 [data-theme="light"] .pbody {
     background: var(--bg0);
 }
+
+/* ═══ RESPONSIVE — TABLET & MOBILE ═══════════════════════════ */
+
+/* Hamburger button (hidden on desktop) */
+.hamburger-btn {
+    display: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: transparent;
+    border: none;
+    align-items: center;
+    justify-content: center;
+    color: var(--t2);
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.hamburger-btn:hover {
+    background: var(--bg3);
+    color: var(--t1);
+}
+
+/* Sidebar overlay backdrop */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 99;
+    backdrop-filter: blur(2px);
+    animation: fadeIn 0.2s ease;
+}
+
+.sidebar-overlay.visible {
+    display: block;
+}
+
+/* ── Tablet (≤ 1024px) ── */
+@media (max-width: 1024px) {
+    .hamburger-btn {
+        display: flex;
+    }
+
+    .sidebar {
+        position: fixed;
+        left: -280px;
+        top: 0;
+        bottom: 0;
+        width: 270px;
+        z-index: 100;
+        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .sidebar.open {
+        left: 0;
+    }
+
+    [dir="rtl"] .sidebar {
+        left: auto;
+        right: -280px;
+        transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: -4px 0 24px rgba(0, 0, 0, 0.4);
+    }
+
+    [dir="rtl"] .sidebar.open {
+        right: 0;
+    }
+
+    .srchwrap {
+        width: 220px;
+    }
+
+    .pbody {
+        padding: 20px 20px;
+    }
+
+    .sgrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .cgrid {
+        grid-template-columns: 1fr;
+    }
+
+    .lcol,
+    .rcol {
+        width: 100%;
+    }
+
+    .db-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .db-header-actions {
+        width: 100%;
+        display: flex;
+        gap: 8px;
+    }
+
+    .db-quick-btn {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .ad-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .settings-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .asgn-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* ── Mobile (≤ 640px) ── */
+@media (max-width: 640px) {
+    .topbar {
+        padding: 0 16px;
+        gap: 8px;
+    }
+
+    .srchwrap {
+        width: 140px;
+    }
+
+    .srch {
+        font-size: 13px;
+        padding: 9px 10px 9px 36px;
+    }
+
+    .pbody {
+        padding: 16px;
+    }
+
+    .sgrid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .scard {
+        padding: 16px;
+        gap: 10px;
+    }
+
+    .sc-ic {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+    }
+
+    .sc-val {
+        font-size: 22px;
+    }
+
+    .pheader h1 {
+        font-size: 20px;
+    }
+
+    .uinfo {
+        display: none;
+    }
+
+    .topbar {
+        height: 60px;
+    }
+
+    .slogo {
+        height: 60px;
+    }
+
+    .tbactions {
+        gap: 6px;
+    }
+
+    .tb-icon-btn {
+        width: 34px;
+        height: 34px;
+    }
+
+    .asgn-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .tt-wrap {
+        overflow-x: auto;
+    }
+
+    .notif-panel {
+        right: 8px;
+        left: 8px;
+        width: auto;
+        max-width: none;
+    }
+}
+
+/* ── Very small (≤ 400px) ── */
+@media (max-width: 400px) {
+    .sgrid {
+        grid-template-columns: 1fr;
+    }
+
+    .srchwrap {
+        display: none;
+    }
+}

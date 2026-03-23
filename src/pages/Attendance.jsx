@@ -30,48 +30,17 @@ export default function PageAttendance() {
                 </div>
             </div>
 
-            {/* Two-column layout */}
-            <div className="aqr-wrap">
-                {/* Left: Lecture Info */}
-                <div className="card" style={{ padding: 24 }}>
-                    <span className="aqr-badge">{a.ongoing}</span>
-                    <h2 className="aqr-course">{a.course}</h2>
-                    <div className="aqr-sub">{a.code} • {a.doctor}</div>
-
-                    <div className="aqr-row">
-                        <div className="aqr-row-icon" style={{ color: '#f44336' }}>📍</div>
-                        <div>
-                            <div className="aqr-row-lbl">{a.location}</div>
-                            <div className="aqr-row-val">{a.hall}</div>
-                        </div>
-                    </div>
-
-                    <div className="aqr-row" style={{ borderStyle: 'solid' }}>
-                        <div className="aqr-row-icon" style={{ color: '#ff9100' }}>🛰️</div>
-                        <div>
-                            <div className="aqr-row-lbl">{a.gps}</div>
-                            <div className="aqr-row-val checking">{a.checking}</div>
-                        </div>
-                    </div>
-
-                    <div className="aqr-status">
-                        <div className="aqr-status-lbl">{a.status}</div>
-                        <div className="aqr-status-val">{a.waiting}</div>
-                    </div>
+            {/* Camera + Scan - full width */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div className="aqr-cam" style={{ width: '100%' }}>
+                    <div className="aqr-cam-ic">📷</div>
+                    <div className="aqr-cam-txt">{a.cameraReady}</div>
+                    <div className="aqr-cam-sub">{a.cameraSub}</div>
+                    <div className="scan-line" />
                 </div>
-
-                {/* Right: Camera + Scan */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                    <div className="aqr-cam">
-                        <div className="aqr-cam-ic">📷</div>
-                        <div className="aqr-cam-txt">{a.cameraReady}</div>
-                        <div className="aqr-cam-sub">{a.cameraSub}</div>
-                        <div className="scan-line" />
-                    </div>
-                    <button className="aqr-scan-btn">
-                        <span>⬛</span> {a.scanBtn}
-                    </button>
-                </div>
+                <button className="aqr-scan-btn">
+                    <span>⬛</span> {a.scanBtn}
+                </button>
             </div>
         </div>
     );

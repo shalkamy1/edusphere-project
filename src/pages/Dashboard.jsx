@@ -50,11 +50,7 @@ const CLASSES = [
     { name: "Database Systems", sub: "Dr. Ahmed Ali • CS 412", time: "11:00 AM", status: "Upcoming", sc: "st-up", dot: "#2979ff" },
     { name: "Machine Learning", sub: "Dr. Layla Nour • IT Lab 411", time: "07:00 PM", status: "Scheduled", sc: "st-sch", dot: "#7c4dff" },
 ];
-const ASSIGNS = [
-    { name: "Web Development Project 3", course: "CS431", due: "Due Dec 15", prio: "High Priority", pc: "ph", bar: "#e53935" },
-    { name: "Linear Algebra Problem Set", course: "MATH301", due: "Due Dec 16", prio: "Medium", pc: "pm", bar: "#ff6d00" },
-    { name: "Technical Writing Essay", course: "ARBLEET", due: "Due Dec 20", prio: "Low", pc: "pl", bar: "#6b7280" },
-];
+
 const GRADES = [
     { code: "CS431", name: "Project 3", pct: 95, color: "#00c853" },
     { code: "MATH301", name: "Midterm Exam", pct: 38, color: "#e53935" },
@@ -136,30 +132,6 @@ export default function PageDashboard({ setPage }) {
                         </div>
                     </div>
 
-                    {/* Assignments */}
-                    <div className="card sec db-section">
-                        <div className="sec-hd">
-                            <span className="sec-ttl">{d.pendingAssign}</span>
-                            <span className="sec-act sec-act-arrow" onClick={() => setPage('assignments')}>
-                                {d.viewAll} {IC.arrowRight}
-                            </span>
-                        </div>
-                        <div className="alist">
-                            {ASSIGNS.map((a, i) => (
-                                <div key={a.name} className="aitem" style={{ animationDelay: `${i * 0.07 + 0.2}s` }}>
-                                    <div className="apbar" style={{ background: a.bar }}></div>
-                                    <div className="ai">
-                                        <div className="an">{a.name}</div>
-                                        <div className="ac">{a.course}</div>
-                                    </div>
-                                    <div className="am">
-                                        <div className="ad">{a.due}</div>
-                                        <span className={`pb ${a.pc}`}>{a.prio}</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
                 </div>
 
                 {/* Right column */}
@@ -216,11 +188,7 @@ export default function PageDashboard({ setPage }) {
                     <div className="card sec db-section" style={{ padding: '20px 24px' }}>
                         <div className="sec-hd"><span className="sec-ttl">Quick Actions</span></div>
                         <div className="qalist-pro">
-                            <button className="qaitem-pro" onClick={() => setPage('assignments')}>
-                                <span className="qa-icon">{IC.clipBoard}</span>
-                                View All Assignments
-                                <span className="qa-arrow">{IC.arrowRight}</span>
-                            </button>
+
                             <button className="qaitem-pro" onClick={() => setPage('grades')}>
                                 <span className="qa-icon">{IC.barChart}</span>
                                 Check My Grades

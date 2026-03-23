@@ -32,8 +32,7 @@ function SchoolIllustration() {
 }
 
 export default function PageLogin({ onLogin }) {
-    const [mode, setMode] = useState('student'); // 'student' | 'admin'
-    const [view, setView] = useState('login'); // 'login' | 'forgot' | 'reset'
+    const [view, setView] = useState('login');
     const [email, setEmail] = useState('');
     const [pass, setPass] = useState('');
     const [rememberMe, setRememberMe] = useState(false);
@@ -52,20 +51,10 @@ export default function PageLogin({ onLogin }) {
         setLoading(true);
         setErr('');
         await new Promise(r => setTimeout(r, 900));
-        if (mode === 'admin') {
-            if (email === 'admin@edusphere.edu' && pass === 'admin123') {
-                onLogin({ name: 'Admin User', role: 'Admin', email });
-            } else if (pass.length >= 4) {
-                onLogin({ name: 'Admin User', role: 'Admin', email });
-            } else {
-                setErr('Invalid admin credentials');
-            }
+        if (email && pass.length >= 4) {
+            onLogin({ name: 'Rawda Ayman', role: 'Student', email });
         } else {
-            if (email && pass.length >= 4) {
-                onLogin({ name: 'Rawda Ayman', role: 'Student', email });
-            } else {
-                setErr('Invalid credentials. Use any email + password (min 4 chars)');
-            }
+            setErr('Invalid credentials. Use any email + password (min 4 chars)');
         }
         setLoading(false);
     };
@@ -94,93 +83,30 @@ export default function PageLogin({ onLogin }) {
         <div className="login-screen-v2">
             {/* Left: Illustration */}
             <div className="login-left">
-                <div className="login-school-wrap">
-                    <div className="login-school-bg">
-                        <div className="login-school-cloud cloud1" />
-                        <div className="login-school-cloud cloud2" />
-                        <div className="login-school-cloud cloud3" />
+
+                {/* Logo pinned top-left */}
+                <div className="login-left-logo">
+                    <img src="/logo.png" alt="EduSphere" className="login-top-logo" />
+                    <div>
+                        <div className="login-brand-title">EduSphere</div>
+                        <div className="login-brand-sub">University Portal</div>
                     </div>
-                    <svg className="login-building-svg" viewBox="0 0 520 380" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        {/* Sky clouds */}
-                        <ellipse cx="80" cy="60" rx="55" ry="22" fill="#dde8f0" opacity="0.7" />
-                        <ellipse cx="120" cy="50" rx="35" ry="16" fill="#eef3f8" opacity="0.8" />
-                        <ellipse cx="420" cy="70" rx="50" ry="20" fill="#dde8f0" opacity="0.6" />
-                        <ellipse cx="460" cy="58" rx="32" ry="14" fill="#eef3f8" opacity="0.7" />
-
-                        {/* Ground */}
-                        <rect x="0" y="310" width="520" height="70" fill="#8aaa6a" rx="0" />
-                        <rect x="0" y="300" width="520" height="14" fill="#a5bf82" />
-
-                        {/* Trees left */}
-                        <rect x="45" y="240" width="10" height="60" fill="#5d4037" />
-                        <ellipse cx="50" cy="230" rx="28" ry="35" fill="#4caf50" />
-                        <ellipse cx="50" cy="220" rx="20" ry="25" fill="#66bb6a" />
-
-                        <rect x="95" y="255" width="8" height="45" fill="#5d4037" />
-                        <ellipse cx="99" cy="245" rx="22" ry="28" fill="#43a047" />
-
-                        {/* Trees right */}
-                        <rect x="430" y="245" width="10" height="55" fill="#5d4037" />
-                        <ellipse cx="435" cy="235" rx="26" ry="32" fill="#4caf50" />
-                        <ellipse cx="435" cy="225" rx="18" ry="22" fill="#66bb6a" />
-
-                        <rect x="475" y="255" width="8" height="45" fill="#5d4037" />
-                        <ellipse cx="479" cy="245" rx="22" ry="28" fill="#43a047" />
-
-                        {/* Main building body */}
-                        <rect x="100" y="155" width="320" height="160" fill="#c8917a" rx="4" />
-
-                        {/* Windows row 1 */}
-                        {[130, 175, 240, 305, 355].map((x, i) => (
-                            <rect key={i} x={x} y="175" width="28" height="36" rx="3" fill="#87CEEB" stroke="#a0785e" strokeWidth="1.5" />
-                        ))}
-
-                        {/* Windows row 2 */}
-                        {[130, 175, 355].map((x, i) => (
-                            <rect key={i} x={x} y="235" width="28" height="36" rx="3" fill="#87CEEB" stroke="#a0785e" strokeWidth="1.5" />
-                        ))}
-
-                        {/* Door arch */}
-                        <rect x="218" y="235" width="84" height="80" fill="#7f4f2a" rx="4" />
-                        <ellipse cx="260" cy="235" rx="42" ry="18" fill="#7f4f2a" />
-                        <rect x="230" y="245" width="26" height="50" rx="3" fill="#87CEEB" opacity="0.7" />
-                        <rect x="264" y="245" width="26" height="50" rx="3" fill="#87CEEB" opacity="0.7" />
-
-                        {/* Front porch columns */}
-                        <rect x="175" y="210" width="16" height="110" fill="#bf8065" rx="3" />
-                        <rect x="329" y="210" width="16" height="110" fill="#bf8065" rx="3" />
-                        <rect x="205" y="210" width="16" height="110" fill="#bf8065" rx="3" />
-                        <rect x="299" y="210" width="16" height="110" fill="#bf8065" rx="3" />
-
-                        {/* Porch roof/overhang */}
-                        <rect x="165" y="198" width="190" height="16" fill="#a0725a" rx="3" />
-
-                        {/* Main roof */}
-                        <polygon points="80,158 260,65 440,158" fill="#8b3a2a" />
-                        <polygon points="100,158 260,72 420,158" fill="#a0453a" />
-
-                        {/* Pediment / triangle detail */}
-                        <polygon points="200,158 260,110 320,158" fill="#b85040" />
-
-                        {/* Clock tower */}
-                        <rect x="228" y="30" width="64" height="90" fill="#b85040" rx="3" />
-                        <rect x="220" y="88" width="80" height="12" fill="#a0453a" />
-                        {/* Clock face */}
-                        <circle cx="260" cy="62" r="22" fill="#f5f5dc" stroke="#8b3a2a" strokeWidth="3" />
-                        <circle cx="260" cy="62" r="18" fill="#fffde7" stroke="#8b3a2a" strokeWidth="1" />
-                        <line x1="260" y1="62" x2="260" y2="48" stroke="#333" strokeWidth="2.5" strokeLinecap="round" />
-                        <line x1="260" y1="62" x2="270" y2="66" stroke="#333" strokeWidth="2" strokeLinecap="round" />
-                        {/* Tower cap */}
-                        <polygon points="228,34 292,34 260,8" fill="#8b1111" />
-                        {/* Tower windows */}
-                        <rect x="242" y="92" width="36" height="22" rx="2" fill="#1a237e" opacity="0.7" />
-
-                        {/* Dome/finial on top */}
-                        <ellipse cx="260" cy="8" rx="6" ry="4" fill="#ffd54f" />
-                        <rect x="258" y="2" width="4" height="10" fill="#777" />
-                    </svg>
                 </div>
-                <div className="login-brand-name">EduSphere University</div>
+
+                {/* Building image — full height, centered */}
+                <div className="login-building-wrap">
+                    <img src="/university.png"   alt="University Campus" className="login-campus-img login-campus-light" />
+                    <img src="/university_t.png" alt="University Campus" className="login-campus-img login-campus-dark" />
+                </div>
+
+                {/* Bottom gradient overlay + tagline */}
+                <div className="login-left-footer">
+                    <div className="login-tagline">"Empowering minds, shaping futures"</div>
+                    <div className="login-left-dots">
+                        <span /><span className="active-dot" /><span />
+                    </div>
+                </div>
+
             </div>
 
             {/* Right: Auth Card */}
@@ -193,15 +119,6 @@ export default function PageLogin({ onLogin }) {
                                 <div className="login-divider" />
                             </div>
 
-                            {/* Mode toggle: Student / Admin */}
-                            <div className="login-mode-tabs">
-                                <button className={`login-mode-tab${mode === 'student' ? ' active' : ''}`} onClick={() => setMode('student')}>
-                                    Student
-                                </button>
-                                <button className={`login-mode-tab${mode === 'admin' ? ' active' : ''}`} onClick={() => setMode('admin')}>
-                                    Admin
-                                </button>
-                            </div>
 
                             <form onSubmit={handleLogin}>
                                 <div className="lf-group">

@@ -28,7 +28,7 @@ export default function PageWarning({ setPage }) {
                 </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 780 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {WARNINGS.map(w => (
                     <div key={w.id} className="warn-card" style={{ borderLeft: `4px solid ${w.color}` }}>
                         <div className="warn-hd">

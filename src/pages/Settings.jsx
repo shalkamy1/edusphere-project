@@ -67,12 +67,14 @@ export default function PageSettings({ theme, setTheme, lang, setLang, t, setPag
                                     <div style={{ fontSize: 12, color: "var(--t3)" }}>rawda.ayman@edusphere.edu</div>
                                 </div>
                             </div>
+                            <div style={{ fontSize: 12, color: 'var(--t3)', marginBottom: 14, padding: '10px 14px', background: 'rgba(41,121,255,0.07)', borderRadius: 10, border: '1px solid rgba(41,121,255,0.15)' }}>
+                                🔒 Your profile information is managed by the university and cannot be edited.
+                            </div>
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
                                 {[["Full Name", "Rawda Ayman"], ["Student ID", "21at41"], ["Email", "rawda@edusphere.edu"], ["Phone", "+20 100 000 0000"], ["Faculty", "Engineering & Technology"], ["Program", "B.Sc. Computer Science"]].map(([l, v]) => (
-                                    <div key={l}><div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 4, fontWeight: 500 }}>{l}</div><input className="set-input" defaultValue={v} /></div>
+                                    <div key={l}><div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 4, fontWeight: 500 }}>{l}</div><input className="set-input" value={v} readOnly style={{ cursor: 'not-allowed', opacity: 0.75 }} /></div>
                                 ))}
                             </div>
-                            <button className="set-save-btn">{g.saveChanges || "💾 Save Changes"}</button>
                         </div>
                     )}
 
@@ -156,21 +158,13 @@ export default function PageSettings({ theme, setTheme, lang, setLang, t, setPag
                         <div className="set-section">
                             <div className="set-section-title">🎨 {g.profAppearance || "Appearance"}</div>
                             <div style={{ marginBottom: 8, fontSize: 12, color: 'var(--t3)', fontWeight: 600 }}>THEME</div>
-                            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 24 }}>
-                                {[["🌙", g.darkMode || "Dark Mode", "dark"], ["☀️", g.lightMode || "Light Mode", "light"], ["🖥️", g.systemMode || "System", "system"]].map(([ic, lbl, k]) => (
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10, marginBottom: 24 }}>
+                                {[["🌙", g.darkMode || "Dark Mode", "dark"], ["☀️", g.lightMode || "Light Mode", "light"]].map(([ic, lbl, k]) => (
                                     <div key={k} className="card" onClick={() => setTheme(k)} style={{ padding: "20px 12px", cursor: "pointer", textAlign: "center", border: theme === k ? "2px solid var(--red)" : "1px solid var(--border)", transition: 'all .2s' }}>
                                         <div style={{ fontSize: 28, marginBottom: 8 }}>{ic}</div>
                                         <div style={{ fontSize: 12, fontWeight: 700, color: "var(--t1)" }}>{lbl}</div>
                                         {theme === k && <div style={{ fontSize: 11, color: 'var(--red)', fontWeight: 700, marginTop: 6 }}>✓ Active</div>}
                                     </div>
-                                ))}
-                            </div>
-                            <div style={{ marginBottom: 8, fontSize: 12, color: 'var(--t3)', fontWeight: 600 }}>ACCENT COLOR</div>
-                            <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
-                                {['#f44336', '#2979ff', '#00c853', '#ff9100', '#7c4dff', '#00bcd4'].map(clr => (
-                                    <div key={clr} title={clr} style={{ width: 32, height: 32, borderRadius: '50%', background: clr, cursor: 'pointer', border: '2px solid transparent', transition: 'transform 0.2s' }}
-                                        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.2)'}
-                                        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'} />
                                 ))}
                             </div>
                         </div>
@@ -195,7 +189,7 @@ export default function PageSettings({ theme, setTheme, lang, setLang, t, setPag
                         <div className="set-section">
                             <div className="set-section-title">📊 {g.profAcademic || "Academic Information"}</div>
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 20 }}>
-                                {[["🎓 Current GPA", acadInfo.gpa + " / 4.0", "#00c853"], ["📚 Credits Earned", acadInfo.credits + " / " + acadInfo.totalCredits, "#2979ff"], ["🏅 Academic Standing", acadInfo.standing, "#ff6d00"], ["👨‍🏫 Academic Advisor", acadInfo.advisor, "var(--t1)"], ["📅 Expected Graduation", acadInfo.gradDate, "var(--t1)"], ["📖 Major", acadInfo.major, "var(--t1)"]].map(([lbl, val, clr]) => (
+                                {[["🎓 Current GPA", acadInfo.gpa + " / 4.0", "#00c853"], ["📚 Credits Earned", acadInfo.credits + " / " + acadInfo.totalCredits, "#2979ff"], ["🏅 Academic Standing", acadInfo.standing, "#ff6d00"], ["📅 Expected Graduation", acadInfo.gradDate, "var(--t1)"], ["📖 Major", acadInfo.major, "var(--t1)"], ["📌 Minor", acadInfo.minor, "var(--t1)"]].map(([lbl, val, clr]) => (
                                     <div key={lbl} className="card" style={{ padding: "16px 18px" }}>
                                         <div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 4, fontWeight: 500 }}>{lbl}</div>
                                         <div style={{ fontSize: 16, fontWeight: 700, color: clr }}>{val}</div>

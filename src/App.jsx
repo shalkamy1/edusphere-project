@@ -9,11 +9,10 @@ import PageWarning from './pages/Warning.jsx';
 import PageRequests from './pages/Requests.jsx';
 import PageCurriculum from './pages/Curriculum.jsx';
 import PageRecords from './pages/Records.jsx';
-import PageAdmin from './pages/Admin.jsx';
 import PageLogin from './pages/Login.jsx';
 import PageSecurity from './pages/Security.jsx';
 import PageChatbot from './pages/Chatbot.jsx';
-import { PageGrades, PageAssignments, PageTimetable, PageAddDrop, PageSettings } from './pages.jsx';
+import { PageGrades, PageTimetable, PageAddDrop, PageSettings } from './pages.jsx';
 
 export const LangCtx = createContext({ t: TRANSLATIONS.en, lang: 'en', setLang: () => { } });
 export const useLang = () => useContext(LangCtx);
@@ -43,7 +42,6 @@ const NAV = [
   { key: 'students', icon: 'students' },
   { key: 'curriculum', icon: 'curriculum' },
   { key: 'records', icon: 'records' },
-  { key: 'admin', icon: 'admin' },
   { key: 'chatbot', icon: 'chatbot' },
   { key: 'settings', icon: 'settings', hasChevron: true },
 ];
@@ -54,7 +52,6 @@ const NAV_LABELS = {
   students: ['Student Services', 'خدمات الطلاب', 'Службы студентов', 'Services Étudiants', 'Studentendienste'],
   curriculum: ['Curriculum Management', 'إدارة المناهج', 'Программа', 'Gestion du Programme', 'Lehrplanverwaltung'],
   records: ['Records', 'السجلات', 'Записи', 'Dossiers', 'Akten'],
-  admin: ['Admin Panel', 'لوحة الإدارة', 'Панель Администратора', 'Panneau Admin', 'Admin-Panel'],
   chatbot: ['AI Assistant', 'المساعد الذكي', 'ИИ Ассистент', 'Assistant IA', 'KI Assistent'],
   settings: ['Settings', 'الإعدادات', 'Настройки', 'Paramètres', 'Einstellungen'],
 };
@@ -63,10 +60,94 @@ const LANG_IDX = { en: 0, ar: 1, ru: 2, fr: 3, de: 4 };
 
 const NOTIFS = [
   { ic: "📅", title: "Class Starting Soon", desc: "Advanced Web Development starts in 15 min", time: "10 min ago", page: 'attendance' },
-  { ic: "📝", title: "Assignment Due Tomorrow", desc: "Web Development Project 3 - CS431", time: "1 hour ago", page: 'assignments' },
+
   { ic: "📊", title: "Grade Posted", desc: "MATH301 Midterm Exam: 38%", time: "3 hours ago", page: 'grades' },
   { ic: "⚠️", title: "Attendance Warning", desc: "You missed 2 sessions in ENG101", time: "Yesterday", page: 'warning' },
 ];
+
+/* ── ADD/DROP GOAL SELECTION MODAL ─────────────────────────── */
+function GoalModal({ onSelect, onClose }) {
+  const [hovered, setHovered] = useState(null);
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="goal-modal" onClick={e => e.stopPropagation()}>
+        {/* Close */}
+        <button className="goal-modal-close" onClick={onClose}>✕</button>
+
+        {/* Header */}
+        <div className="goal-modal-header">
+          <div className="goal-modal-icon">🎓</div>
+          <h2 className="goal-modal-title">What's your goal?</h2>
+          <p className="goal-modal-sub">Choose a scenario and we'll recommend the best courses for you</p>
+        </div>
+
+        {/* Options */}
+        <div className="goal-modal-options">
+          {/* Option 1: Improve GPA */}
+          <div
+            className={`goal-option${hovered === 'gpa' ? ' goal-option-hovered' : ''}`}
+            onMouseEnter={() => setHovered('gpa')}
+            onMouseLeave={() => setHovered(null)}
+            onClick={() => onSelect('gpa')}
+          >
+            <div className="goal-option-icon goal-icon-gpa">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+                <polyline points="17 6 23 6 23 12" />
+              </svg>
+            </div>
+            <div className="goal-option-body">
+              <div className="goal-option-title">Improve My GPA</div>
+              <div className="goal-option-desc">We'll suggest easier, high-impact courses that can boost your GPA this semester</div>
+              <div className="goal-option-tags">
+                <span className="goal-tag goal-tag-blue">High GPA Impact</span>
+                <span className="goal-tag goal-tag-green">Easier Workload</span>
+              </div>
+            </div>
+            <div className="goal-option-arrow">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
+              </svg>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="goal-modal-divider"><span>or</span></div>
+
+          {/* Option 2: Complete Requirements */}
+          <div
+            className={`goal-option${hovered === 'req' ? ' goal-option-hovered' : ''}`}
+            onMouseEnter={() => setHovered('req')}
+            onMouseLeave={() => setHovered(null)}
+            onClick={() => onSelect('req')}
+          >
+            <div className="goal-option-icon goal-icon-req">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                <polyline points="22 4 12 14.01 9 11.01" />
+              </svg>
+            </div>
+            <div className="goal-option-body">
+              <div className="goal-option-title">Complete My Requirements</div>
+              <div className="goal-option-desc">We'll recommend courses with the most credit hours to help you graduate faster</div>
+              <div className="goal-option-tags">
+                <span className="goal-tag goal-tag-orange">More Credits</span>
+                <span className="goal-tag goal-tag-purple">Faster Graduation</span>
+              </div>
+            </div>
+            <div className="goal-option-arrow">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <p className="goal-modal-note">💡 You can always browse all courses after selecting a goal</p>
+      </div>
+    </div>
+  );
+}
 
 /* ── GET SUPPORT MODAL ──────────────────────────────────────── */
 function GetSupportModal({ onClose }) {
@@ -94,7 +175,7 @@ function GetSupportModal({ onClose }) {
             <div>
               <div style={{ fontSize: 12, color: 'var(--t3)', fontWeight: 700, marginBottom: 8 }}>ISSUE TYPE</div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {['Technical', 'Academic', 'Payment', 'Other'].map(t => (
+                {['Technical', 'Academic', 'Other'].map(t => (
                   <button key={t} type="button" className="cmp-cat" style={{ padding: '6px 14px', fontSize: 12 }}>{t}</button>
                 ))}
               </div>
@@ -138,18 +219,18 @@ function LogoutModal({ onConfirm, onCancel }) {
 }
 
 /* ── SIDEBAR ─────────────────────────────────────────────────── */
-function Sidebar({ page, setPage, lang, onSupport, onLogout }) {
+function Sidebar({ page, setPage, lang, onSupport, onLogout, isOpen, onClose }) {
   const { t } = useLang();
   const idx = LANG_IDX[lang] || 0;
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
+  const handleNav = (key) => { setPage(key); onClose && onClose(); };
+
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar${isOpen ? ' open' : ''}`}>
       <div className="slogo" onClick={() => setPage('dashboard')}>
-        <div className="slogo-av">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" />
-          </svg>
+        <div className="slogo-av" style={{ background: 'transparent', padding: 0, overflow: 'hidden' }}>
+          <img src="/logo.png" alt="EduSphere Logo" style={{ width: 40, height: 40, objectFit: 'contain', borderRadius: 10 }} />
         </div>
         <div>
           <div className="logo-txt">EduSphere</div>
@@ -162,7 +243,7 @@ function Sidebar({ page, setPage, lang, onSupport, onLogout }) {
           const label = NAV_LABELS[n.key][idx];
           const active = page === n.key || (n.key === 'students' && ['medical', 'complaints', 'warning', 'requests'].includes(page));
           return (
-            <div key={n.key} className={`nitem${active ? ' active' : ''}`} onClick={() => setPage(n.key)}>
+            <div key={n.key} className={`nitem${active ? ' active' : ''}`} onClick={() => handleNav(n.key)}>
               <span className="nic">{Icons[n.icon]}</span>
               <span className="nlabel">{label}</span>
               {n.badge && <span className="nbadge">{n.badge}</span>}
@@ -235,7 +316,7 @@ const SEARCH_INDEX = [
   { label: 'AI Assistant / Chatbot', page: 'chatbot', icon: '🤖', desc: 'AI help' },
   { label: 'Settings', page: 'settings', icon: '⚙️', desc: 'Account preferences' },
   { label: 'Grades', page: 'grades', icon: '📊', desc: 'View your grades' },
-  { label: 'Assignments', page: 'assignments', icon: '📝', desc: 'All assignments' },
+
   { label: 'Timetable', page: 'timetable', icon: '📅', desc: 'Weekly schedule' },
   { label: 'Add / Drop Courses', page: 'adddrop', icon: '➕', desc: 'Manage enrollment' },
   { label: 'Advanced Web Development', page: 'timetable', icon: '💻', desc: 'CS431 • MWF 9:00' },
@@ -246,7 +327,7 @@ const SEARCH_INDEX = [
   { label: 'Security', page: 'security', icon: '🔒', desc: 'Password & sessions' },
 ];
 
-function Topbar({ theme, setTheme, showNotif, setShowNotif, setPage, lang, userInfo }) {
+function Topbar({ theme, setTheme, showNotif, setShowNotif, setPage, lang, userInfo, hasUnread, onBellClick, onHamburger }) {
   const { t } = useLang();
   const initials = userInfo?.name?.split(' ').map(w => w[0]).join('').slice(0, 2) || 'RA';
   const [searchVal, setSearchVal] = useState('');
@@ -268,6 +349,11 @@ function Topbar({ theme, setTheme, showNotif, setShowNotif, setPage, lang, userI
 
   return (
     <header className="topbar">
+      <button className="hamburger-btn" onClick={onHamburger} title="Menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+      </button>
       <div className="srchwrap" ref={searchRef}>
         <span className="srchic">{Icons.search}</span>
         <input
@@ -298,9 +384,9 @@ function Topbar({ theme, setTheme, showNotif, setShowNotif, setPage, lang, userI
         <button className="tb-icon-btn" onClick={() => setPage('settings')} title="Settings">
           {Icons.gear}
         </button>
-        <button className="tb-icon-btn tb-bell" onClick={() => setShowNotif(v => !v)} title="Notifications">
+        <button className="tb-icon-btn tb-bell" onClick={onBellClick} title="Notifications">
           {Icons.bell}
-          <span className="tb-badge">2</span>
+          {hasUnread && <span className="tb-badge">2</span>}
         </button>
         <div className="tb-user">
           <div className="uavt">{initials}</div>
@@ -317,12 +403,21 @@ function Topbar({ theme, setTheme, showNotif, setShowNotif, setPage, lang, userI
 /* ── APP ROOT ───────────────────────────────────────────────── */
 export default function App() {
   const [page, setPage] = useState('dashboard');
-  const [theme, setTheme] = useState('dark');
+  const [theme, setTheme] = useState('light');
   const [showNotif, setShowNotif] = useState(false);
   const [showSupport, setShowSupport] = useState(false);
   const [lang, setLang] = useState('en');
   const [loggedIn, setLoggedIn] = useState(false);
   const [userInfo, setUserInfo] = useState(null);
+  const [hasUnread, setHasUnread] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showGoalModal, setShowGoalModal] = useState(false);
+  const [addDropGoal, setAddDropGoal] = useState(null);
+  const [droppedCourses, setDroppedCourses] = useState([]);
+  const [failedCourses] = useState(['MATH102']); // demo: Calculus II failed
+
+  // navigateTo handles all page navigation
+  const navigateTo = (p) => { setPage(p); };
 
   // System theme detection
   useEffect(() => {
@@ -370,20 +465,19 @@ export default function App() {
 
   const renderPage = () => {
     switch (page) {
-      case 'dashboard': return <PageDashboard setPage={setPage} />;
+      case 'dashboard': return <PageDashboard setPage={navigateTo} />;
       case 'attendance': return <PageAttendance setPage={setPage} />;
       case 'students': return <PageStudentServices setPage={setPage} />;
-      case 'curriculum': return <PageCurriculum setPage={setPage} />;
+      case 'curriculum': return <PageCurriculum setPage={setPage} droppedCourses={droppedCourses} failedCourses={failedCourses} />;
       case 'records': return <PageRecords setPage={setPage} />;
-      case 'admin': return <PageAdmin setPage={setPage} />;
       case 'medical': return <PageMedical setPage={setPage} />;
       case 'complaints': return <PageComplaints setPage={setPage} />;
       case 'warning': return <PageWarning setPage={setPage} />;
       case 'requests': return <PageRequests setPage={setPage} />;
       case 'grades': return <PageGrades t={t} setPage={setPage} />;
-      case 'assignments': return <PageAssignments t={t} setPage={setPage} />;
+
       case 'timetable': return <PageTimetable t={t} setPage={setPage} />;
-      case 'adddrop': return <PageAddDrop setPage={setPage} t={t} />;
+      case 'adddrop': return <PageAddDrop setPage={navigateTo} t={t} goal={addDropGoal} onGoalSelect={(g) => setAddDropGoal(g)} onRequestGoal={() => setShowGoalModal(true)} onCourseDrop={(code) => setDroppedCourses(prev => prev.includes(code) ? prev : [...prev, code])} />;
       case 'settings': return <PageSettings theme={theme} setTheme={setTheme} lang={lang} setLang={setLang} t={t} setPage={setPage} />;
       case 'chatbot': return <PageChatbot />;
       case 'security': return <PageSecurity onLogout={handleLogout} setPage={setPage} />;
@@ -394,11 +488,22 @@ export default function App() {
   return (
     <LangCtx.Provider value={{ t, lang, setLang }}>
       <div className="app">
-        <Sidebar page={page} setPage={setPage} lang={lang}
-          onSupport={() => setShowSupport(true)} onLogout={handleLogout} />
+        {sidebarOpen && <div className="sidebar-overlay visible" onClick={() => setSidebarOpen(false)} />}
+        {showGoalModal && (
+          <GoalModal
+            onClose={() => setShowGoalModal(false)}
+            onSelect={(gl) => { setAddDropGoal(gl); setShowGoalModal(false); }}
+          />
+        )}
+        <Sidebar page={page} setPage={navigateTo} lang={lang}
+          onSupport={() => setShowSupport(true)} onLogout={handleLogout}
+          isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         <div className="main">
           <Topbar theme={theme} setTheme={setTheme} showNotif={showNotif}
-            setShowNotif={(v) => { if (v) playNotifSound(); setShowNotif(v); }} setPage={setPage} lang={lang} userInfo={userInfo} />
+            setShowNotif={setShowNotif} setPage={navigateTo} lang={lang} userInfo={userInfo}
+            hasUnread={hasUnread}
+            onBellClick={() => { const opening = !showNotif; if (opening) { playNotifSound(); setHasUnread(false); } setShowNotif(opening); }}
+            onHamburger={() => setSidebarOpen(v => !v)} />
           {showNotif && (
             <>
               <div className="notif-overlay" onClick={() => setShowNotif(false)} />
