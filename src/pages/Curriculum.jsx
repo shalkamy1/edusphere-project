@@ -1,95 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLang } from '../App.jsx';
 
-/* ── COURSE DATABASE ─────────────────────────────────────────── */
-const COURSES = {
-    CS101:   { name: 'Intro to CS',          credits: 3, prereqs: [],                 color: '#e53935' },
-    MATH101: { name: 'Calculus I',            credits: 3, prereqs: [],                 color: '#ff6d00' },
-    ENG101:  { name: 'English I',             credits: 2, prereqs: [],                 color: '#2979ff' },
-    PHYS101: { name: 'Physics I',             credits: 3, prereqs: [],                 color: '#9c27b0' },
-
-    CS102:   { name: 'Programming Basics',    credits: 3, prereqs: ['CS101'],          color: '#e53935' },
-    MATH102: { name: 'Calculus II',           credits: 3, prereqs: ['MATH101'],        color: '#ff6d00' },
-    ENG102:  { name: 'English II',            credits: 2, prereqs: ['ENG101'],         color: '#2979ff' },
-    PHYS102: { name: 'Physics II',            credits: 3, prereqs: ['PHYS101'],        color: '#9c27b0' },
-
-    CS201:   { name: 'Data Structures',       credits: 3, prereqs: ['CS102'],          color: '#e53935' },
-    CS203:   { name: 'OOP',                   credits: 3, prereqs: ['CS102'],          color: '#e53935' },
-    MATH201: { name: 'Linear Algebra',        credits: 3, prereqs: ['MATH102'],        color: '#ff6d00' },
-    SOC201:  { name: 'Society & Tech',        credits: 2, prereqs: [],                 color: '#607d8b' },
-
-    CS211:   { name: 'Algorithms',            credits: 3, prereqs: ['CS201'],          color: '#e53935' },
-    CS214:   { name: 'OS Concepts',           credits: 3, prereqs: ['CS201'],          color: '#e53935' },
-    MATH204: { name: 'Discrete Math',         credits: 3, prereqs: ['MATH201'],        color: '#ff6d00' },
-    HUM206:  { name: 'Humanities',            credits: 2, prereqs: [],                 color: '#607d8b' },
-
-    CS301:   { name: 'Database Systems',      credits: 3, prereqs: ['CS211'],          color: '#e53935' },
-    CS302:   { name: 'Software Engineering',  credits: 3, prereqs: ['CS211'],          color: '#e53935' },
-    CS303:   { name: 'Networks',              credits: 3, prereqs: ['CS214'],          color: '#e53935' },
-    HUM301:  { name: 'Research Methods',      credits: 2, prereqs: [],                 color: '#607d8b' },
-
-    CS311:   { name: 'AI Fundamentals',       credits: 3, prereqs: ['CS301'],          color: '#e53935' },
-    CS321:   { name: 'Web Development',       credits: 3, prereqs: ['CS302'],          color: '#e53935' },
-    MATH301: { name: 'Prob & Stats',          credits: 3, prereqs: ['MATH204'],        color: '#ff6d00' },
-    ENG301:  { name: 'Technical Writing',     credits: 2, prereqs: [],                 color: '#2979ff' },
-
-    CS401:   { name: 'Graduation Project',    credits: 6, prereqs: ['CS311', 'CS321'], color: '#e53935' },
-    CS411:   { name: 'Machine Learning',      credits: 3, prereqs: ['CS311'],          color: '#e53935' },
-    CS421:   { name: 'Cloud Computing',       credits: 3, prereqs: ['CS303'],          color: '#e53935' },
-
-    CS431:   { name: 'Adv Web Dev',           credits: 3, prereqs: ['CS321'],          color: '#e53935' },
-    CS441:   { name: 'Security',              credits: 3, prereqs: ['CS303'],          color: '#e53935' },
-    CS451:   { name: 'Capstone',              credits: 3, prereqs: ['CS401'],          color: '#e53935' },
-};
-
-/* ── SCHEDULE ────────────────────────────────────────────────── */
-const SCHEDULE = [
-    {
-        year: 1, label: 'First Year',
-        sems: [
-            { id: 'f22', label: 'Fall 2022',   courses: ['CS101', 'MATH101', 'ENG101', 'PHYS101'] },
-            { id: 's23', label: 'Spring 2023', courses: ['CS102', 'MATH102', 'ENG102', 'PHYS102'] },
-        ],
-        summerLabel: 'Summer 2023',
-    },
-    {
-        year: 2, label: 'Second Year',
-        sems: [
-            { id: 'f23', label: 'Fall 2023',   courses: ['CS201', 'CS203', 'MATH201', 'SOC201'] },
-            { id: 's24', label: 'Spring 2024', courses: ['CS211', 'CS214', 'MATH204', 'HUM206'] },
-        ],
-        summerLabel: 'Summer 2024',
-    },
-    {
-        year: 3, label: 'Third Year',
-        sems: [
-            { id: 'f24', label: 'Fall 2024',   courses: ['CS301', 'CS302', 'CS303', 'HUM301'] },
-            { id: 's25', label: 'Spring 2025', courses: ['CS311', 'CS321', 'MATH301', 'ENG301'] },
-        ],
-        summerLabel: 'Summer 2025',
-    },
-    {
-        year: 4, label: 'Fourth Year',
-        sems: [
-            { id: 'f25', label: 'Fall 2025',   courses: ['CS401', 'CS411', 'CS421'] },
-            { id: 's26', label: 'Spring 2026', courses: ['CS431', 'CS441', 'CS451'] },
-        ],
-        summerLabel: null,
-    },
-];
-
-/* ── BASE STATUS ─────────────────────────────────────────────── */
-const BASE_STATUS = {
-    CS101: 'done', MATH101: 'done', ENG101: 'done', PHYS101: 'done',
-    CS102: 'done', MATH102: 'done', ENG102: 'done', PHYS102: 'done',
-    CS201: 'done', CS203: 'done', MATH201: 'done', SOC201: 'done',
-    CS211: 'done', CS214: 'done', MATH204: 'done', HUM206: 'done',
-    CS301: 'done', CS302: 'done', CS303: 'done', HUM301: 'done',
-    CS311: 'prog', CS321: 'prog', MATH301: 'prog', ENG301: 'prog',
-    CS401: 'upcoming', CS411: 'upcoming', CS421: 'upcoming',
-    CS431: 'upcoming', CS441: 'upcoming', CS451: 'upcoming',
-};
-
+/* ── CONSTANTS ─────────────────────────────────────────────────── */
 const ST = {
     done:     { label: 'Done',        dot: '#00c853', bg: 'rgba(0,200,83,0.12)',   border: 'rgba(0,200,83,0.3)',    text: '#00c853' },
     prog:     { label: 'In Progress', dot: '#2979ff', bg: 'rgba(41,121,255,0.12)', border: 'rgba(41,121,255,0.3)',  text: '#2979ff' },
@@ -99,13 +11,54 @@ const ST = {
 };
 
 /* ── COMPONENT ───────────────────────────────────────────────── */
-export default function PageCurriculum({ droppedCourses = [], failedCourses = [] }) {
+import { getStoredUser, getStudentCurriculum } from '../api.js';
+
+export default function PageCurriculum() {
     const { t } = useLang();
     const [hoveredCode, setHoveredCode] = useState(null);
+    
+    // Dynamic states from backend
+    const [courses, setCourses] = useState({});
+    const [schedule, setSchedule] = useState([]);
+    const [dynStatus, setDynStatus] = useState(null);
+    const [failedCourses, setFailedCourses] = useState([]);
+    const [droppedCourses, setDroppedCourses] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    const [program, setProgram] = useState(null);
+
+    useEffect(() => {
+        const fetchCurriculum = async () => {
+            try {
+                const user = getStoredUser();
+                if (!user || user.role !== 'student' || !user.student_id) {
+                    setLoading(false);
+                    return;
+                }
+                const res = await getStudentCurriculum(user.student_id);
+                if (res && res.success && res.data) {
+                    setCourses(res.data.courses || {});
+                    setSchedule(res.data.schedule || []);
+                    setDynStatus(res.data.statuses || {});
+                    setFailedCourses(res.data.failed_courses || []);
+                    setDroppedCourses(res.data.dropped_courses || []);
+                    setProgram(res.data.program || null);
+                }
+            } catch (err) {
+                console.error("Error fetching curriculum data:", err);
+            }
+            setLoading(false);
+        };
+        fetchCurriculum();
+    }, []);
+
+    if (loading) {
+        return <div className="page-enter" style={{ padding: 40, textAlign: 'center', color: 'var(--t3)' }}>Loading curriculum data...</div>;
+    }
 
     /* Build "is a prereq of" map */
     const isPrereqFor = {};
-    Object.entries(COURSES).forEach(([code, info]) => {
+    Object.entries(courses).forEach(([code, info]) => {
         info.prereqs.forEach(p => {
             if (!isPrereqFor[p]) isPrereqFor[p] = [];
             isPrereqFor[p].push(code);
@@ -113,16 +66,18 @@ export default function PageCurriculum({ droppedCourses = [], failedCourses = []
     });
 
     const getStatus = code => {
+        if (!dynStatus) return 'upcoming'; // while loading
         if (failedCourses.includes(code)) return 'failed';
         if (droppedCourses.includes(code)) return 'dropped';
-        return BASE_STATUS[code] || 'upcoming';
+        if (code in dynStatus) return dynStatus[code];
+        return 'upcoming'; // Default for unconnected/unavailable courses
     };
 
     /* Highlight role relative to hovered code */
     const hlRole = code => {
         if (!hoveredCode) return null;
         if (code === hoveredCode) return 'active';
-        if (COURSES[hoveredCode]?.prereqs.includes(code)) return 'prereq';
+        if (courses[hoveredCode]?.prereqs.includes(code)) return 'prereq';
         if (isPrereqFor[hoveredCode]?.includes(code)) return 'dependent';
         return null;
     };
@@ -134,24 +89,24 @@ export default function PageCurriculum({ droppedCourses = [], failedCourses = []
     };
 
     /* Stats */
-    const allCodes = SCHEDULE.flatMap(y => y.sems.flatMap(s => s.courses));
-    const totalCredits = allCodes.reduce((a, c) => a + (COURSES[c]?.credits || 0), 0);
-    const doneCredits  = allCodes.filter(c => getStatus(c) === 'done').reduce((a, c) => a + (COURSES[c]?.credits || 0), 0);
+    const allCodes = schedule.flatMap(y => y.sems.flatMap(s => s.courses));
+    const totalCredits = allCodes.reduce((a, c) => a + (courses[c]?.credits || 0), 0);
+    const doneCredits  = allCodes.filter(c => getStatus(c) === 'done').reduce((a, c) => a + (courses[c]?.credits || 0), 0);
     const doneCount    = allCodes.filter(c => getStatus(c) === 'done').length;
     const progCount    = allCodes.filter(c => getStatus(c) === 'prog').length;
-    const progress     = Math.round(doneCredits / totalCredits * 100);
+    const progress     = Math.round(doneCredits / totalCredits * 100) || 0;
 
     /* Failed/dropped table list */
     const failedDropped = [...new Set([...failedCourses, ...droppedCourses])];
 
     /* ── Course card renderer ── */
     const renderCourse = (code, isSummer = false) => {
-        const info = COURSES[code];
+        const info = courses[code];
         if (!info) return null;
         const st   = getStatus(code);
         const cfg  = ST[isSummer ? (st === 'failed' ? 'failed' : 'dropped') : st];
         const role = hlRole(code);
-        const hasPrereqs = info.prereqs.length > 0;
+        const hasPrereqs = info.prereqs && info.prereqs.length > 0;
         const isLinked   = hasPrereqs || (isPrereqFor[code]?.length > 0);
 
         const borderColor = role === 'active'    ? 'var(--red)'   :
@@ -216,7 +171,7 @@ export default function PageCurriculum({ droppedCourses = [], failedCourses = []
                 </div>
                 <div>
                     <h1 className="cur-page-title">{t.curriculum?.title || 'Curriculum Plan'}</h1>
-                    <p className="cur-page-sub">Bachelor of Science in Computer Science · 4 Years</p>
+                    <p className="cur-page-sub">{program || 'General (Level 1, 2)'}</p>
                 </div>
             </div>
 
@@ -264,7 +219,7 @@ export default function PageCurriculum({ droppedCourses = [], failedCourses = []
             </div>
 
             {/* Years */}
-            {SCHEDULE.map(yearData => {
+            {schedule.map(yearData => {
                 const summerCourses = getSummerCourses(yearData);
                 return (
                     <div key={yearData.year} className="cur3-year-block">
@@ -335,10 +290,10 @@ export default function PageCurriculum({ droppedCourses = [], failedCourses = []
                         </thead>
                         <tbody>
                             {failedDropped.map(code => {
-                                const info = COURSES[code] || {};
+                                const info = courses[code] || {};
                                 const st   = droppedCourses.includes(code) ? 'dropped' : 'failed';
                                 const cfg  = ST[st];
-                                const yearData = SCHEDULE.find(y => y.sems.some(s => s.courses.includes(code)));
+                                const yearData = schedule.find(y => y.sems.some(s => s.courses.includes(code)));
                                 return (
                                     <tr key={code}>
                                         <td><span style={{ color: info.color, fontWeight: 700 }}>{code}</span></td>

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLang } from '../App.jsx';
+import { getStoredUser, getStudentCGPA, getStudentTranscript, getStudentTodayClasses, getStudentRequests } from '../api.js';
 
 /* ── Modern SVG Icon components ── */
 const IC = {
@@ -57,30 +59,116 @@ const GRADES = [
     { code: "ENG101", name: "Essay", pct: 92, color: "#00c853" },
 ];
 
-export default function PageDashboard({ setPage }) {
+export default function PageDashboard() {
+    const navigate = useNavigate();
     const { t, lang } = useLang();
     const isRTL = lang === 'ar';
     const d = t.dashboard;
+
+    const [dashboardData, setDashboardData] = useState({
+        cgpa: 0,
+        totalCourses: 0,
+        recentGrades: GRADES, // fallback
+        todayClasses: CLASSES, // fallback
+        pendingTasks: 8, // fallback
+        loading: true
+    });
+
+    useEffect(() => {
+        const fetchDashboardData = async () => {
+            try {
+                const user = getStoredUser();
+                if (!user || user.role !== 'student' || !user.student_id) {
+                    setDashboardData(prev => ({ ...prev, loading: false }));
+                    return;
+                }
+                const [cgpaRes, transcriptRes, classesRes, requestsRes] = await Promise.all([
+                    getStudentCGPA(user.student_id).catch(() => null),
+                    getStudentTranscript(user.student_id).catch(() => null),
+                    getStudentTodayClasses().catch(() => null),
+                    getStudentRequests().catch(() => null)
+                ]);
+                
+                let cgpa = 0;
+                let totalCourses = 0;
+                let recentGrades = GRADES;
+                
+                if (cgpaRes && cgpaRes.data) {
+                    cgpa = cgpaRes.data.cgpa;
+                }
+
+                if (transcriptRes && transcriptRes.data && transcriptRes.data.semesters) {
+                    const semesters = transcriptRes.data.semesters;
+                    for (const sem of semesters) {
+                        totalCourses += sem.courses ? sem.courses.length : 0;
+                    }
+                    if (semesters.length > 0) {
+                        const latestSem = semesters[semesters.length - 1];
+                        if (latestSem.courses && latestSem.courses.length > 0) {
+                            recentGrades = latestSem.courses.map(c => ({
+                                code: c.course_code,
+                                name: c.course_title,
+                                pct: c.total_score || 0,
+                                color: (c.total_score >= 85) ? "#00c853" : ((c.total_score >= 60) ? "#2979ff" : "#e53935")
+                            })).slice(0, 4);
+                        }
+                    }
+                }
+
+                let pendingTasks = 8;
+                let todayClasses = CLASSES;
+
+                if (classesRes && classesRes.success) {
+                    todayClasses = classesRes.data.map(c => ({
+                        name: c.course_name,
+                        sub: `${c.instructor} • ${c.course_code}`,
+                        time: c.time,
+                        status: "Scheduled", // simplistic logic for now
+                        sc: "st-sch",
+                        dot: "#7c4dff"
+                    }));
+                }
+
+                if (requestsRes && requestsRes.success) {
+                    pendingTasks = requestsRes.data.filter(r => r.status === 'pending').length;
+                }
+
+                setDashboardData({
+                    cgpa: cgpa || 0,
+                    totalCourses: totalCourses || 0,
+                    recentGrades: recentGrades,
+                    todayClasses: todayClasses.length > 0 ? todayClasses : [],
+                    pendingTasks: pendingTasks,
+                    loading: false
+                });
+
+            } catch (err) {
+                console.error("Error fetching dashboard data:", err);
+                setDashboardData(prev => ({ ...prev, loading: false }));
+            }
+        };
+        fetchDashboardData();
+    }, []);
+
     const STATS = [
-        { icon: IC.book, lbl: d.totalCourses, val: 6, tr: d.thisSem, dir: "up", cl: "red" },
-        { icon: IC.star, lbl: d.avgGpa, val: "3.8", tr: "+0.2 pts", dir: "up", cl: "blu" },
-        { icon: IC.calendar, lbl: d.classesToday, val: 4, tr: d.onTrack, dir: "up", cl: "org" },
-        { icon: IC.clock, lbl: d.pendingTasks, val: 8, tr: d.overdue, dir: "dn", cl: "pur" },
+        { icon: IC.book, lbl: d.totalCourses, val: dashboardData.totalCourses, tr: d.thisSem, dir: "up", cl: "red" },
+        { icon: IC.star, lbl: d.avgGpa, val: dashboardData.cgpa ? parseFloat(dashboardData.cgpa).toFixed(2) : "0.00", tr: "Current", dir: "up", cl: "blu" },
+        { icon: IC.calendar, lbl: d.classesToday, val: dashboardData.todayClasses.length, tr: d.onTrack, dir: "up", cl: "org" },
     ];
 
     return (
         <div className="page-enter" dir={isRTL ? 'rtl' : 'ltr'}>
             <div className="pheader db-header">
                 <div>
-                    <h1>{d.welcome}</h1>
+                    <h1>{d.welcome.replace('Rawda', getStoredUser()?.name?.split(' ')[0] || 'Student').replace('روضة', getStoredUser()?.name?.split(' ')[0] || 'طالب')}</h1>
                     <p>{d.sub}</p>
                 </div>
                 <div className="db-header-actions">
-                    <button className="db-quick-btn" onClick={() => setPage('timetable')}>
-                        {IC.tableIcon} {lang === 'ar' ? 'الجدول' : 'Timetable'}
+                    <button className="db-quick-btn" onClick={() => navigate('/timetable')}>
+                        {IC.tableIcon} {d.viewTt}
                     </button>
-                    <button className="db-quick-btn db-quick-btn-red" onClick={() => setPage('adddrop')}>
-                        {IC.plusCircle} {lang === 'ar' ? 'إضافة مادة' : 'Add Course'}
+                    <button className="db-quick-btn db-quick-btn-red" onClick={() => navigate('/adddrop')}>
+                        {IC.plusCircle} {d.addDrop}
                     </button>
                 </div>
             </div>
@@ -109,12 +197,16 @@ export default function PageDashboard({ setPage }) {
                     <div className="card sec db-section">
                         <div className="sec-hd">
                             <span className="sec-ttl">{d.todayClasses}</span>
-                            <span className="sec-act sec-act-arrow" onClick={() => setPage('timetable')}>
+                            <span className="sec-act sec-act-arrow" onClick={() => navigate('/timetable')}>
                                 {d.viewSchedule} {IC.arrowRight}
                             </span>
                         </div>
                         <div className="clist">
-                            {CLASSES.map((c, i) => (
+                            {dashboardData.loading ? (
+                                <div style={{padding:'20px', textAlign:'center', color:'#888'}}>Loading layout...</div>
+                            ) : dashboardData.todayClasses.length === 0 ? (
+                                <div style={{padding:'20px', textAlign:'center', color:'#888'}}>No classes today.</div>
+                            ) : dashboardData.todayClasses.map((c, i) => (
                                 <div key={c.name} className="citem" style={{ animationDelay: `${i * 0.07 + 0.15}s` }}>
                                     <span className="cdot" style={{ background: c.dot }}>
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg>
@@ -140,12 +232,12 @@ export default function PageDashboard({ setPage }) {
                     <div className="card sec db-section">
                         <div className="sec-hd">
                             <span className="sec-ttl">{d.recentGrades}</span>
-                            <span className="sec-act sec-act-arrow" onClick={() => setPage('grades')}>
+                            <span className="sec-act sec-act-arrow" onClick={() => navigate('/grades')}>
                                 {d.all} {IC.arrowRight}
                             </span>
                         </div>
                         <div className="glist">
-                            {GRADES.map((g, i) => (
+                            {dashboardData.loading ? <div style={{padding:'20px', textAlign:'center', color:'#888'}}>Loading...</div> : dashboardData.recentGrades.map((g, i) => (
                                 <div key={g.code} className="gitem" style={{ animationDelay: `${i * 0.07 + 0.1}s` }}>
                                     <div className="gh">
                                         <div>
@@ -165,8 +257,8 @@ export default function PageDashboard({ setPage }) {
                     {/* QR Card */}
                     <div className="card qrcard-pro">
                         <div className="qrhd-pro">
-                            <span className="qrtit-pro">Smart Attendance</span>
-                            <span className="qr-subtitle">Scan QR to mark attendance</span>
+                            <span className="qrtit-pro">{d.smartAttend}</span>
+                            <span className="qr-subtitle">{d.scanNow}</span>
                         </div>
                         <div className="qrbox-pro">
                             <div className="qrsvg-wrap qr-pulse">
@@ -178,30 +270,30 @@ export default function PageDashboard({ setPage }) {
                                 Expires in 5:00
                             </div>
                         </div>
-                        <button className="qrbtn-pro" onClick={() => setPage('attendance')}>
+                        <button className="qrbtn-pro" onClick={() => navigate('/attendance')}>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="5" height="5" rx="0.5" /><rect x="3" y="11" width="5" height="5" rx="0.5" /><rect x="11" y="3" width="5" height="5" rx="0.5" /></svg>
-                            Scan Now
+                            {d.scanNow}
                         </button>
                     </div>
 
                     {/* Quick Actions */}
                     <div className="card sec db-section" style={{ padding: '20px 24px' }}>
-                        <div className="sec-hd"><span className="sec-ttl">Quick Actions</span></div>
+                        <div className="sec-hd"><span className="sec-ttl">{d.quickActions}</span></div>
                         <div className="qalist-pro">
 
-                            <button className="qaitem-pro" onClick={() => setPage('grades')}>
+                            <button className="qaitem-pro" onClick={() => navigate('/grades')}>
                                 <span className="qa-icon">{IC.barChart}</span>
-                                Check My Grades
+                                {d.checkGrades}
                                 <span className="qa-arrow">{IC.arrowRight}</span>
                             </button>
-                            <button className="qaitem-pro" onClick={() => setPage('adddrop')}>
+                            <button className="qaitem-pro" onClick={() => navigate('/adddrop')}>
                                 <span className="qa-icon">{IC.plusCircle}</span>
-                                Add/Drop Courses
+                                {d.addDrop}
                                 <span className="qa-arrow">{IC.arrowRight}</span>
                             </button>
-                            <button className="qaitem-pro qaitem-red" onClick={() => setPage('timetable')}>
+                            <button className="qaitem-pro qaitem-red" onClick={() => navigate('/timetable')}>
                                 <span className="qa-icon">{IC.tableIcon}</span>
-                                View Timetable
+                                {d.viewTt}
                                 <span className="qa-arrow">{IC.arrowRight}</span>
                             </button>
                         </div>

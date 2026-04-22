@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { login, forgotPassword, resetPassword } from '../api.js';
 
 /* School building illustration SVG */
 function SchoolIllustration() {
@@ -40,7 +41,7 @@ export default function PageLogin({ onLogin }) {
     const [err, setErr] = useState('');
     const [showPass, setShowPass] = useState(false);
     const [resetEmail, setResetEmail] = useState('');
-    const [resetCode, setResetCode] = useState('');
+    const [resetToken, setResetToken] = useState('');
     const [newPass, setNewPass] = useState('');
     const [confirmPass, setConfirmPass] = useState('');
     const [codeSent, setCodeSent] = useState(false);
@@ -50,11 +51,19 @@ export default function PageLogin({ onLogin }) {
         e.preventDefault();
         setLoading(true);
         setErr('');
-        await new Promise(r => setTimeout(r, 900));
-        if (email && pass.length >= 4) {
-            onLogin({ name: 'Rawda Ayman', role: 'Student', email });
-        } else {
-            setErr('Invalid credentials. Use any email + password (min 4 chars)');
+        try {
+            const data = await login(email, pass);
+            // data.user contains: name, email, role, id, etc.
+            const user = data.user;
+            onLogin({
+                name: user.name,
+                role: user.role,
+                email: user.email,
+                id: user.id,
+                faculty_id: user.faculty_id || null,
+            });
+        } catch (error) {
+            setErr(error.message || 'Invalid credentials. Please try again.');
         }
         setLoading(false);
     };
@@ -62,10 +71,15 @@ export default function PageLogin({ onLogin }) {
     const handleForgotSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-        await new Promise(r => setTimeout(r, 800));
-        setCodeSent(true);
+        setErr('');
+        try {
+            await forgotPassword(resetEmail);
+            setCodeSent(true);
+            setTimeout(() => setView('reset'), 1200);
+        } catch (error) {
+            setErr(error.message || 'Failed to send reset link. Please check your email.');
+        }
         setLoading(false);
-        setTimeout(() => setView('reset'), 1200);
     };
 
     const handleResetSubmit = async (e) => {
@@ -73,10 +87,14 @@ export default function PageLogin({ onLogin }) {
         if (newPass !== confirmPass) { setErr('Passwords do not match'); return; }
         setLoading(true);
         setErr('');
-        await new Promise(r => setTimeout(r, 800));
-        setResetSuccess(true);
+        try {
+            await resetPassword(resetEmail, newPass, confirmPass, resetToken);
+            setResetSuccess(true);
+            setTimeout(() => { setView('login'); setResetSuccess(false); setResetToken(''); setNewPass(''); setConfirmPass(''); }, 2000);
+        } catch (error) {
+            setErr(error.message || 'Failed to reset password. Please try again.');
+        }
         setLoading(false);
-        setTimeout(() => { setView('login'); setResetSuccess(false); setResetCode(''); setNewPass(''); setConfirmPass(''); }, 2000);
     };
 
     return (
@@ -192,9 +210,14 @@ export default function PageLogin({ onLogin }) {
                                     {loading ? <span className="login-spinner" /> : 'Send Reset Code'}
                                 </button>
                             </form>
-                            <button className="lf-back-link" onClick={() => { setView('login'); setCodeSent(false); setResetEmail(''); setErr(''); }}>
-                                ← Back to Login
-                            </button>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '16px', gap: '8px' }}>
+                                <button className="lf-forgot-link" onClick={() => { setView('reset'); setCodeSent(false); setErr(''); }}>
+                                    Already have a reset code?
+                                </button>
+                                <button className="lf-back-link" style={{ marginTop: '0' }} onClick={() => { setView('login'); setCodeSent(false); setResetEmail(''); setErr(''); }}>
+                                    ← Back to Login
+                                </button>
+                            </div>
                         </>
                     )}
 
@@ -213,8 +236,12 @@ export default function PageLogin({ onLogin }) {
                             ) : (
                                 <form onSubmit={handleResetSubmit}>
                                     <div className="lf-group">
-                                        <label className="lf-label">Verification Code</label>
-                                        <input type="text" className="lf-input" placeholder="Enter 6-digit code" value={resetCode} onChange={e => setResetCode(e.target.value)} required />
+                                        <label className="lf-label">Email Address</label>
+                                        <input type="email" className="lf-input" placeholder="Confirm your email" value={resetEmail} onChange={e => setResetEmail(e.target.value)} required />
+                                    </div>
+                                    <div className="lf-group">
+                                        <label className="lf-label">Reset Token</label>
+                                        <input type="text" className="lf-input" placeholder="Paste the token from your email" value={resetToken} onChange={e => setResetToken(e.target.value)} required />
                                     </div>
                                     <div className="lf-group">
                                         <label className="lf-label">New Password</label>

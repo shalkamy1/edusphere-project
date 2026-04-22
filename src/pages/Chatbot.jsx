@@ -1,39 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import { getStoredUser, adviseStudent } from '../api.js';
 
-const BOT_RESPONSES = {
-    default: "I'm here to help! You can ask me about your courses, grades, schedule, or any academic questions.",
-    hello: "Hello! 👋 Welcome to EduSphere! How can I assist you today?",
-    hi: "Hi there! 😊 I'm your EduSphere AI assistant. What would you like to know?",
-    grades: "📊 Your current GPA is 3.82/4.0. You have 4 courses this semester. Would you like details on a specific course?",
-    schedule: "📅 Your next class is Advanced Web Development (CS431) at 10:00 AM in Room B-204. Check the Timetable for your full schedule.",
-    attendance: "✅ Your overall attendance rate is 87%. You have 3 pending absences in ENG101. Please submit any medical excuses soon.",
-    help: "I can help you with:\n• 📊 Grades & GPA\n• 📅 Class schedule\n• 📋 Attendance status\n• 📚 Course information\n• 🎓 Graduation requirements\n• 💡 General questions",
-    gpa: "🎓 Your current GPA is 3.82/4.0 — Great Standing! You need 45 more credit hours to graduate.",
-    courses: "📚 This semester you're enrolled in:\n• CS5402 - Advanced Software Engineering\n• CS412 - Database Systems II\n• MATH301 - Discrete Mathematics\n• HUM401 - Professional Ethics",
-    assignment: "📝 You have 2 upcoming assignments:\n• Web Development Project 3 (due tomorrow)\n• Database Lab Report (due in 3 days)",
-    deadline: "⏰ Upcoming deadlines:\n• Assignment due: Tomorrow - CS431\n• Lab Report: Dec 15 - CS412\n• Final Submission: Dec 20 - MATH301",
-};
-
-function getBotReply(text) {
-    const lower = text.toLowerCase();
-    if (lower.includes('hello') || lower.includes('hey')) return BOT_RESPONSES.hello;
-    if (lower.includes('hi')) return BOT_RESPONSES.hi;
-    if (lower.includes('grade') || lower.includes('mark')) return BOT_RESPONSES.grades;
-    if (lower.includes('schedule') || lower.includes('timetable') || lower.includes('class')) return BOT_RESPONSES.schedule;
-    if (lower.includes('attend')) return BOT_RESPONSES.attendance;
-    if (lower.includes('help') || lower.includes('what can')) return BOT_RESPONSES.help;
-    if (lower.includes('gpa')) return BOT_RESPONSES.gpa;
-    if (lower.includes('course') || lower.includes('enrolled')) return BOT_RESPONSES.courses;
-    if (lower.includes('assignment') || lower.includes('homework')) return BOT_RESPONSES.assignment;
-    if (lower.includes('deadline') || lower.includes('due')) return BOT_RESPONSES.deadline;
-    return BOT_RESPONSES.default;
-}
-
-const QUICK = ['My GPA', 'My Schedule', 'Attendance', 'Assignments', 'Help'];
+const QUICK = ['My GPA', 'My Schedule', 'Attendance', 'Recommend Courses', 'Help'];
 
 export default function PageChatbot() {
     const [msgs, setMsgs] = useState([
-        { from: 'bot', text: "Hello! 👋 I'm EduBot, your AI academic assistant. How can I help you today?", time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
+        { from: 'bot', text: "Hello! 👋 I'm EduBot, your AI academic assistant. I am connected to the main EduSphere system. How can I help you today?", time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
     ]);
     const [input, setInput] = useState('');
     const [typing, setTyping] = useState(false);
@@ -46,13 +19,43 @@ export default function PageChatbot() {
     const send = async (text) => {
         if (!text.trim()) return;
         const t = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        // Add user message
         setMsgs(prev => [...prev, { from: 'user', text, time: t }]);
         setInput('');
         setTyping(true);
-        await new Promise(r => setTimeout(r, 900 + Math.random() * 600));
-        setTyping(false);
-        const reply = getBotReply(text);
-        setMsgs(prev => [...prev, { from: 'bot', text: reply, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
+
+        try {
+            const user = getStoredUser();
+            if (!user || user.role !== 'student' || !user.student_id) {
+                throw new Error("Student not found or not authenticated.");
+            }
+
+            // Call backend API
+            const response = await adviseStudent(user.student_id, text);
+            
+            let replyText = "I couldn't process your request.";
+            if (response && response.data && response.data.recommendation) {
+                replyText = response.data.recommendation;
+            }
+
+            setMsgs(prev => [...prev, { 
+                from: 'bot', 
+                text: replyText, 
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+            }]);
+
+        } catch (error) {
+            console.error("Chatbot Error:", error);
+            const errorMsg = error.message || "Sorry, I am having trouble connecting to the EduSphere server right now. Please try again later.";
+            setMsgs(prev => [...prev, { 
+                from: 'bot', 
+                text: `⚠️ **Error:** ${errorMsg}`, 
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+            }]);
+        } finally {
+            setTyping(false);
+        }
     };
 
     const handleSubmit = (e) => { e.preventDefault(); send(input); };
@@ -70,14 +73,14 @@ export default function PageChatbot() {
                     </svg>
                 </div>
                 <div>
-                    <div className="chatbot-header-name">EduBot</div>
+                    <div className="chatbot-header-name">EduBot AI Agent</div>
                     <div className="chatbot-header-status">
                         <span className="chatbot-online-dot" /> AI Academic Assistant · Online
                     </div>
                 </div>
                 <div className="chatbot-header-badge">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></svg>
-                    EduSphere AI
+                    EduSphere Backend
                 </div>
             </div>
 
@@ -91,7 +94,15 @@ export default function PageChatbot() {
                             </div>
                         )}
                         <div className="chatbot-bubble-wrap">
-                            <div className={`chatbot-bubble ${m.from === 'user' ? 'user' : 'bot'}`} style={{ whiteSpace: 'pre-line' }}>{m.text}</div>
+                            <div className={`chatbot-bubble ${m.from === 'user' ? 'user' : 'bot'}`} style={{ whiteSpace: m.from === 'bot' ? 'normal' : 'pre-line' }}>
+                                {m.from === 'bot' ? (
+                                    <div className="markdown-body">
+                                        <ReactMarkdown>{m.text}</ReactMarkdown>
+                                    </div>
+                                ) : (
+                                    m.text
+                                )}
+                            </div>
                             <div className="chatbot-time">{m.time}</div>
                         </div>
                     </div>
@@ -123,8 +134,9 @@ export default function PageChatbot() {
                     placeholder="Type your message..."
                     value={input}
                     onChange={e => setInput(e.target.value)}
+                    disabled={typing}
                 />
-                <button type="submit" className="chatbot-send-btn" disabled={!input.trim()}>
+                <button type="submit" className="chatbot-send-btn" disabled={!input.trim() || typing}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <line x1="22" y1="2" x2="11" y2="13" />
                         <polygon points="22 2 15 22 11 13 2 9 22 2" />

@@ -1,5 +1,9 @@
-import React, { useState, useEffect, useRef, createContext, useContext } from 'react';
+import React, { useState, useEffect, useRef, createContext, useContext, useCallback } from 'react';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { logout as apiLogout, getToken, getStoredUser, clearAuth, getCurrentUser, saveAuth, getProfile } from './api.js';
 import { TRANSLATIONS } from './i18n.js';
+import NotificationBell from './components/NotificationBell.jsx';
+import NotificationToast from './components/NotificationToast.jsx';
 import PageDashboard from './pages/Dashboard.jsx';
 import PageAttendance from './pages/Attendance.jsx';
 import PageStudentServices from './pages/StudentServices.jsx';
@@ -16,6 +20,9 @@ import { PageGrades, PageTimetable, PageAddDrop, PageSettings } from './pages.js
 
 export const LangCtx = createContext({ t: TRANSLATIONS.en, lang: 'en', setLang: () => { } });
 export const useLang = () => useContext(LangCtx);
+
+export const ToastCtx = createContext({ showToast: () => {} });
+export const useToast = () => useContext(ToastCtx);
 
 /* ── SVG ICONS (MODERN PREMIUM) ─────────────────────────────── */
 const Icons = {
@@ -58,16 +65,14 @@ const NAV_LABELS = {
 
 const LANG_IDX = { en: 0, ar: 1, ru: 2, fr: 3, de: 4 };
 
-const NOTIFS = [
-  { ic: "📅", title: "Class Starting Soon", desc: "Advanced Web Development starts in 15 min", time: "10 min ago", page: 'attendance' },
+// Static NOTIFS removed — replaced by real-time NotificationBell
 
-  { ic: "📊", title: "Grade Posted", desc: "MATH301 Midterm Exam: 38%", time: "3 hours ago", page: 'grades' },
-  { ic: "⚠️", title: "Attendance Warning", desc: "You missed 2 sessions in ENG101", time: "Yesterday", page: 'warning' },
-];
 
 /* ── ADD/DROP GOAL SELECTION MODAL ─────────────────────────── */
 function GoalModal({ onSelect, onClose }) {
   const [hovered, setHovered] = useState(null);
+  const { t } = useLang();
+  const ui = t.ui || {};
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="goal-modal" onClick={e => e.stopPropagation()}>
@@ -77,8 +82,8 @@ function GoalModal({ onSelect, onClose }) {
         {/* Header */}
         <div className="goal-modal-header">
           <div className="goal-modal-icon">🎓</div>
-          <h2 className="goal-modal-title">What's your goal?</h2>
-          <p className="goal-modal-sub">Choose a scenario and we'll recommend the best courses for you</p>
+          <h2 className="goal-modal-title">{ui.goalTitle || "What's your goal?"}</h2>
+          <p className="goal-modal-sub">{ui.goalSub || "Choose a scenario and we'll recommend the best courses for you"}</p>
         </div>
 
         {/* Options */}
@@ -97,11 +102,11 @@ function GoalModal({ onSelect, onClose }) {
               </svg>
             </div>
             <div className="goal-option-body">
-              <div className="goal-option-title">Improve My GPA</div>
-              <div className="goal-option-desc">We'll suggest easier, high-impact courses that can boost your GPA this semester</div>
+              <div className="goal-option-title">{ui.goalGpaTitle || 'Improve My GPA'}</div>
+              <div className="goal-option-desc">{ui.goalGpaDesc || "We'll suggest easier, high-impact courses that can boost your GPA this semester"}</div>
               <div className="goal-option-tags">
-                <span className="goal-tag goal-tag-blue">High GPA Impact</span>
-                <span className="goal-tag goal-tag-green">Easier Workload</span>
+                <span className="goal-tag goal-tag-blue">{ui.goalGpaTag1 || 'High GPA Impact'}</span>
+                <span className="goal-tag goal-tag-green">{ui.goalGpaTag2 || 'Easier Workload'}</span>
               </div>
             </div>
             <div className="goal-option-arrow">
@@ -112,7 +117,7 @@ function GoalModal({ onSelect, onClose }) {
           </div>
 
           {/* Divider */}
-          <div className="goal-modal-divider"><span>or</span></div>
+          <div className="goal-modal-divider"><span>{ui.goalOr || 'or'}</span></div>
 
           {/* Option 2: Complete Requirements */}
           <div
@@ -128,11 +133,11 @@ function GoalModal({ onSelect, onClose }) {
               </svg>
             </div>
             <div className="goal-option-body">
-              <div className="goal-option-title">Complete My Requirements</div>
-              <div className="goal-option-desc">We'll recommend courses with the most credit hours to help you graduate faster</div>
+              <div className="goal-option-title">{ui.goalReqTitle || 'Complete My Requirements'}</div>
+              <div className="goal-option-desc">{ui.goalReqDesc || "We'll recommend courses with the most credit hours to help you graduate faster"}</div>
               <div className="goal-option-tags">
-                <span className="goal-tag goal-tag-orange">More Credits</span>
-                <span className="goal-tag goal-tag-purple">Faster Graduation</span>
+                <span className="goal-tag goal-tag-orange">{ui.goalReqTag1 || 'More Credits'}</span>
+                <span className="goal-tag goal-tag-purple">{ui.goalReqTag2 || 'Faster Graduation'}</span>
               </div>
             </div>
             <div className="goal-option-arrow">
@@ -143,7 +148,7 @@ function GoalModal({ onSelect, onClose }) {
           </div>
         </div>
 
-        <p className="goal-modal-note">💡 You can always browse all courses after selecting a goal</p>
+        <p className="goal-modal-note">{ui.goalNote || '💡 You can always browse all courses after selecting a goal'}</p>
       </div>
     </div>
   );
@@ -153,39 +158,41 @@ function GoalModal({ onSelect, onClose }) {
 function GetSupportModal({ onClose }) {
   const [msg, setMsg] = useState('');
   const [sent, setSent] = useState(false);
+  const { t } = useLang();
+  const ui = t.ui || {};
   const send = (e) => { e.preventDefault(); setSent(true); setTimeout(onClose, 2000); };
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card" onClick={e => e.stopPropagation()}>
         <div className="modal-hd">
           <div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--t1)' }}>🎓 Get Support</div>
-            <div style={{ fontSize: 12, color: 'var(--t3)', marginTop: 2 }}>EduSphere IT & Academic Support</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--t1)' }}>🎓 {ui.supportTitle || 'Get Support'}</div>
+            <div style={{ fontSize: 12, color: 'var(--t3)', marginTop: 2 }}>{ui.supportSub || 'EduSphere IT & Academic Support'}</div>
           </div>
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
         {sent ? (
           <div style={{ textAlign: 'center', padding: '40px 0' }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>✅</div>
-            <div style={{ fontWeight: 800, color: 'var(--t1)', marginBottom: 6 }}>Ticket Submitted!</div>
-            <div style={{ fontSize: 13, color: 'var(--t3)' }}>Our team will respond within 24 hours.</div>
+            <div style={{ fontWeight: 800, color: 'var(--t1)', marginBottom: 6 }}>{ui.supportDone || 'Ticket Submitted!'}</div>
+            <div style={{ fontSize: 13, color: 'var(--t3)' }}>{ui.supportDoneSub || 'Our team will respond within 24 hours.'}</div>
           </div>
         ) : (
           <form onSubmit={send} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div>
-              <div style={{ fontSize: 12, color: 'var(--t3)', fontWeight: 700, marginBottom: 8 }}>ISSUE TYPE</div>
+              <div style={{ fontSize: 12, color: 'var(--t3)', fontWeight: 700, marginBottom: 8 }}>{ui.supportIssueType || 'ISSUE TYPE'}</div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {['Technical', 'Academic', 'Other'].map(t => (
-                  <button key={t} type="button" className="cmp-cat" style={{ padding: '6px 14px', fontSize: 12 }}>{t}</button>
+                {['Technical', 'Academic', 'Other'].map(tp => (
+                  <button key={tp} type="button" className="cmp-cat" style={{ padding: '6px 14px', fontSize: 12 }}>{tp}</button>
                 ))}
               </div>
             </div>
             <div>
-              <div style={{ fontSize: 12, color: 'var(--t3)', fontWeight: 700, marginBottom: 8 }}>DESCRIBE YOUR ISSUE</div>
-              <textarea className="cmp-textarea" rows={4} placeholder="Describe your problem..."
+              <div style={{ fontSize: 12, color: 'var(--t3)', fontWeight: 700, marginBottom: 8 }}>{ui.supportDescribe || 'DESCRIBE YOUR ISSUE'}</div>
+              <textarea className="cmp-textarea" rows={4} placeholder={ui.supportPlaceholder || 'Describe your problem...'}
                 value={msg} onChange={e => setMsg(e.target.value)} />
             </div>
-            <button type="submit" className="submit-btn-red">📤 Submit Ticket</button>
+            <button type="submit" className="submit-btn-red">{ui.supportSubmit || '📤 Submit Ticket'}</button>
           </form>
         )}
       </div>
@@ -195,21 +202,23 @@ function GetSupportModal({ onClose }) {
 
 /* ── LOGOUT CONFIRM MODAL ────────────────────────────────────── */
 function LogoutModal({ onConfirm, onCancel }) {
+  const { t } = useLang();
+  const ui = t.ui || {};
   return (
     <div className="modal-overlay" onClick={onCancel}>
       <div className="modal-card" style={{ maxWidth: 380 }} onClick={e => e.stopPropagation()}>
         <div style={{ textAlign: 'center', padding: '8px 0 20px' }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>🚪</div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--t1)', marginBottom: 8 }}>Sign Out?</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--t1)', marginBottom: 8 }}>{ui.signOutQ || 'Sign Out?'}</div>
           <div style={{ fontSize: 13, color: 'var(--t3)', lineHeight: 1.6, marginBottom: 24 }}>
-            You'll be signed out of EduSphere. Make sure you've saved your work.
+            {ui.signOutDesc || "You'll be signed out of EduSphere. Make sure you've saved your work."}
           </div>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
             <button onClick={onCancel} style={{ padding: '10px 28px', borderRadius: 10, border: '1px solid var(--border)', background: 'transparent', color: 'var(--t1)', fontWeight: 600, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>
-              Cancel
+              {ui.cancel || 'Cancel'}
             </button>
             <button onClick={onConfirm} className="submit-btn-red" style={{ padding: '10px 28px' }}>
-              Sign Out
+              {ui.signOut || 'Sign Out'}
             </button>
           </div>
         </div>
@@ -219,16 +228,19 @@ function LogoutModal({ onConfirm, onCancel }) {
 }
 
 /* ── SIDEBAR ─────────────────────────────────────────────────── */
-function Sidebar({ page, setPage, lang, onSupport, onLogout, isOpen, onClose }) {
+function Sidebar({ lang, onSupport, onLogout, isOpen, onClose }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const page = location.pathname.substring(1) || 'dashboard';
   const { t } = useLang();
   const idx = LANG_IDX[lang] || 0;
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  const handleNav = (key) => { setPage(key); onClose && onClose(); };
+  const handleNav = (key) => { navigate('/' + key); onClose && onClose(); };
 
   return (
     <aside className={`sidebar${isOpen ? ' open' : ''}`}>
-      <div className="slogo" onClick={() => setPage('dashboard')}>
+      <div className="slogo" onClick={() => navigate('/dashboard')}>
         <div className="slogo-av" style={{ background: 'transparent', padding: 0, overflow: 'hidden' }}>
           <img src="/logo.png" alt="EduSphere Logo" style={{ width: 40, height: 40, objectFit: 'contain', borderRadius: 10 }} />
         </div>
@@ -257,7 +269,7 @@ function Sidebar({ page, setPage, lang, onSupport, onLogout, isOpen, onClose }) 
         <div className="sidebar-divider" />
         <div className="nitem nitem-logout" onClick={() => setShowLogoutModal(true)}>
           <span className="nic">{Icons.logout}</span>
-          <span className="nlabel">Sign Out</span>
+          <span className="nlabel">{t.ui?.signOut || 'Sign Out'}</span>
         </div>
       </div>
 
@@ -279,27 +291,8 @@ function Sidebar({ page, setPage, lang, onSupport, onLogout, isOpen, onClose }) 
   );
 }
 
-/* ── NOTIFICATION PANEL ─────────────────────────────────────── */
-function NotifPanel({ onClose, setPage }) {
-  return (
-    <div className="notif-panel">
-      <div className="notif-hd">
-        <span style={{ fontWeight: 800, color: 'var(--t1)' }}>Notifications</span>
-        <button className="notif-close" onClick={onClose}>✕</button>
-      </div>
-      {NOTIFS.map((n, i) => (
-        <div key={i} className="notif-item" onClick={() => { setPage(n.page); onClose(); }}>
-          <div className="notif-ic">{n.ic}</div>
-          <div>
-            <div className="notif-title">{n.title}</div>
-            <div className="notif-desc">{n.desc}</div>
-            <div className="notif-time">{n.time}</div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
+// NotifPanel replaced by NotificationBell component (real-time, DB-backed)
+
 
 /* ── SEARCH BAR with functional results ─────────────────────── */
 const SEARCH_INDEX = [
@@ -327,7 +320,8 @@ const SEARCH_INDEX = [
   { label: 'Security', page: 'security', icon: '🔒', desc: 'Password & sessions' },
 ];
 
-function Topbar({ theme, setTheme, showNotif, setShowNotif, setPage, lang, userInfo, hasUnread, onBellClick, onHamburger }) {
+function Topbar({ theme, setTheme, lang, userInfo, userId, onNewNotif, onHamburger }) {
+  const navigate = useNavigate();
   const { t } = useLang();
   const initials = userInfo?.name?.split(' ').map(w => w[0]).join('').slice(0, 2) || 'RA';
   const [searchVal, setSearchVal] = useState('');
@@ -366,7 +360,7 @@ function Topbar({ theme, setTheme, showNotif, setShowNotif, setPage, lang, userI
         {searchOpen && searchResults.length > 0 && (
           <div className="search-dropdown">
             {searchResults.map((item, i) => (
-              <div key={i} className="search-result-item" onClick={() => { setPage(item.page); setSearchVal(''); setSearchOpen(false); }}>
+              <div key={i} className="search-result-item" onClick={() => { navigate('/' + item.page); setSearchVal(''); setSearchOpen(false); }}>
                 <span className="search-result-icon">{item.icon}</span>
                 <div>
                   <div className="search-result-label">{item.label}</div>
@@ -381,15 +375,28 @@ function Topbar({ theme, setTheme, showNotif, setShowNotif, setPage, lang, userI
         <button className="tb-icon-btn" onClick={() => setTheme(th => th === 'dark' ? 'light' : 'dark')} title="Toggle Theme">
           {theme === 'dark' ? Icons.sun : Icons.moon}
         </button>
-        <button className="tb-icon-btn" onClick={() => setPage('settings')} title="Settings">
+        <button className="tb-icon-btn" onClick={() => navigate('/settings')} title="Settings">
           {Icons.gear}
         </button>
-        <button className="tb-icon-btn tb-bell" onClick={onBellClick} title="Notifications">
-          {Icons.bell}
-          {hasUnread && <span className="tb-badge">2</span>}
-        </button>
+
+        {/* Real-time NotificationBell — replaces static bell button */}
+        <NotificationBell
+          userId={userId}
+          onNavigate={navigate}
+          onNewNotif={onNewNotif}
+        />
+
         <div className="tb-user">
-          <div className="uavt">{initials}</div>
+          {userInfo?.profile_picture_url ? (
+            <img
+              src={userInfo.profile_picture_url}
+              className="uavt"
+              style={{ padding: 0, objectFit: 'cover', background: 'white', borderRadius: '50%' }}
+              alt="Avatar"
+              onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex'; }}
+            />
+          ) : null}
+          <div className="uavt" style={{ display: userInfo?.profile_picture_url ? 'none' : 'flex' }}>{initials}</div>
           <div className="uinfo">
             <div className="uname">{userInfo?.name || t.topbar.name}</div>
             <div className="urole">{userInfo?.role || t.topbar.role}</div>
@@ -402,22 +409,82 @@ function Topbar({ theme, setTheme, showNotif, setShowNotif, setPage, lang, userI
 
 /* ── APP ROOT ───────────────────────────────────────────────── */
 export default function App() {
-  const [page, setPage] = useState('dashboard');
+  const navigate = useNavigate();
+  const location = useLocation();
+  const page = location.pathname.substring(1) || 'dashboard';
   const [theme, setTheme] = useState('light');
-  const [showNotif, setShowNotif] = useState(false);
   const [showSupport, setShowSupport] = useState(false);
   const [lang, setLang] = useState('en');
   const [loggedIn, setLoggedIn] = useState(false);
   const [userInfo, setUserInfo] = useState(null);
-  const [hasUnread, setHasUnread] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [addDropGoal, setAddDropGoal] = useState(null);
   const [droppedCourses, setDroppedCourses] = useState([]);
   const [failedCourses] = useState(['MATH102']); // demo: Calculus II failed
+  const [toasts, setToasts] = useState([]);
 
-  // navigateTo handles all page navigation
-  const navigateTo = (p) => { setPage(p); };
+  // Real-time notification toasts (separate from the main toast system)
+  const [notifToasts, setNotifToasts] = useState([]);
+  const dismissNotifToast = useCallback((id) => {
+    setNotifToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
+  const handleNewNotif = useCallback((notif) => {
+    // Add to toast stack (max 3 at a time)
+    setNotifToasts(prev => [notif, ...prev].slice(0, 3));
+  }, []);
+
+  const showToast = (msg, type = 'info') => {
+    const id = Date.now() + Math.random();
+    setToasts(prev => [...prev, { id, msg, type }]);
+    setTimeout(() => { setToasts(prev => prev.filter(t => t.id !== id)); }, 4000);
+  };
+
+  const [authLoading, setAuthLoading] = useState(true);
+
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        const token = getToken();
+        const storedUser = getStoredUser();
+        if (token && storedUser) {
+          setUserInfo(storedUser);
+          setLoggedIn(true);
+        }
+        if (token) {
+          // Use getProfile() which includes profile_picture_url
+          try {
+            const profileRes = await getProfile();
+            if (profileRes.success && profileRes.data) {
+              const freshUser = {
+                ...storedUser,
+                ...profileRes.data,
+                // keep student_id from stored user if not in profile response
+                student_id: profileRes.data.student?.id || storedUser?.student_id,
+              };
+              setUserInfo(freshUser);
+              setLoggedIn(true);
+              saveAuth(token, freshUser);
+            }
+          } catch {
+            // fallback: try the simple user endpoint
+            const latestUser = await getCurrentUser();
+            if (latestUser) {
+              setUserInfo(latestUser);
+              setLoggedIn(true);
+              saveAuth(token, latestUser);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Session restore failed:', err);
+      } finally {
+        setAuthLoading(false);
+      }
+    };
+    initAuth();
+  }, []);
+
 
   // System theme detection
   useEffect(() => {
@@ -431,6 +498,7 @@ export default function App() {
       document.documentElement.setAttribute('data-theme', theme);
     }
   }, [theme]);
+
   useEffect(() => {
     const tr = TRANSLATIONS[lang];
     document.documentElement.setAttribute('dir', tr.dir);
@@ -452,8 +520,10 @@ export default function App() {
     } catch (_) { }
   };
 
-  const handleLogout = () => { setLoggedIn(false); setUserInfo(null); setPage('dashboard'); };
+  const handleLogout = () => { setLoggedIn(false); setUserInfo(null); navigate('/dashboard'); };
   const handleLogin = (info) => { setUserInfo(info); setLoggedIn(true); };
+
+  if (authLoading) return null;
 
   if (!loggedIn) {
     return (
@@ -463,59 +533,56 @@ export default function App() {
     );
   }
 
-  const renderPage = () => {
-    switch (page) {
-      case 'dashboard': return <PageDashboard setPage={navigateTo} />;
-      case 'attendance': return <PageAttendance setPage={setPage} />;
-      case 'students': return <PageStudentServices setPage={setPage} />;
-      case 'curriculum': return <PageCurriculum setPage={setPage} droppedCourses={droppedCourses} failedCourses={failedCourses} />;
-      case 'records': return <PageRecords setPage={setPage} />;
-      case 'medical': return <PageMedical setPage={setPage} />;
-      case 'complaints': return <PageComplaints setPage={setPage} />;
-      case 'warning': return <PageWarning setPage={setPage} />;
-      case 'requests': return <PageRequests setPage={setPage} />;
-      case 'grades': return <PageGrades t={t} setPage={setPage} />;
-
-      case 'timetable': return <PageTimetable t={t} setPage={setPage} />;
-      case 'adddrop': return <PageAddDrop setPage={navigateTo} t={t} goal={addDropGoal} onGoalSelect={(g) => setAddDropGoal(g)} onRequestGoal={() => setShowGoalModal(true)} onCourseDrop={(code) => setDroppedCourses(prev => prev.includes(code) ? prev : [...prev, code])} />;
-      case 'settings': return <PageSettings theme={theme} setTheme={setTheme} lang={lang} setLang={setLang} t={t} setPage={setPage} />;
-      case 'chatbot': return <PageChatbot />;
-      case 'security': return <PageSecurity onLogout={handleLogout} setPage={setPage} />;
-      default: return <PageDashboard setPage={setPage} />;
-    }
-  };
-
   return (
     <LangCtx.Provider value={{ t, lang, setLang }}>
-      <div className="app">
-        {sidebarOpen && <div className="sidebar-overlay visible" onClick={() => setSidebarOpen(false)} />}
-        {showGoalModal && (
-          <GoalModal
-            onClose={() => setShowGoalModal(false)}
-            onSelect={(gl) => { setAddDropGoal(gl); setShowGoalModal(false); }}
-          />
-        )}
-        <Sidebar page={page} setPage={navigateTo} lang={lang}
-          onSupport={() => setShowSupport(true)} onLogout={handleLogout}
-          isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <div className="main">
-          <Topbar theme={theme} setTheme={setTheme} showNotif={showNotif}
-            setShowNotif={setShowNotif} setPage={navigateTo} lang={lang} userInfo={userInfo}
-            hasUnread={hasUnread}
-            onBellClick={() => { const opening = !showNotif; if (opening) { playNotifSound(); setHasUnread(false); } setShowNotif(opening); }}
-            onHamburger={() => setSidebarOpen(v => !v)} />
-          {showNotif && (
-            <>
-              <div className="notif-overlay" onClick={() => setShowNotif(false)} />
-              <NotifPanel onClose={() => setShowNotif(false)} setPage={setPage} />
-            </>
+      <ToastCtx.Provider value={{ showToast }}>
+        <div className="app">
+          {sidebarOpen && <div className="sidebar-overlay visible" onClick={() => setSidebarOpen(false)} />}
+          {showGoalModal && (
+            <GoalModal
+              onClose={() => setShowGoalModal(false)}
+              onSelect={(gl) => { setAddDropGoal(gl); setShowGoalModal(false); }}
+            />
           )}
-          {showSupport && <GetSupportModal onClose={() => setShowSupport(false)} />}
-          <div className="pbody" key={page}>
-            {renderPage()}
+          <Sidebar lang={lang}
+            onSupport={() => setShowSupport(true)} onLogout={handleLogout}
+            isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+          <div className="main">
+            <Topbar theme={theme} setTheme={setTheme} lang={lang} userInfo={userInfo}
+              userId={userInfo?.id}
+              onNewNotif={handleNewNotif}
+              onHamburger={() => setSidebarOpen(v => !v)} />
+            {showSupport && <GetSupportModal onClose={() => setShowSupport(false)} />}
+            {/* Real-time notification toasts */}
+            <NotificationToast
+              toasts={notifToasts}
+              onDismiss={dismissNotifToast}
+              onNavigate={navigate}
+            />
+            <div className="pbody" key={page}>
+              <Routes>
+                <Route path="/" element={<PageDashboard />} />
+                <Route path="/dashboard" element={<PageDashboard />} />
+                <Route path="/attendance" element={<PageAttendance />} />
+                <Route path="/students" element={<PageStudentServices />} />
+                <Route path="/curriculum" element={<PageCurriculum droppedCourses={droppedCourses} failedCourses={failedCourses} />} />
+                <Route path="/records" element={<PageRecords />} />
+                <Route path="/medical" element={<PageMedical />} />
+                <Route path="/complaints" element={<PageComplaints />} />
+                <Route path="/warning" element={<PageWarning />} />
+                <Route path="/requests" element={<PageRequests />} />
+                <Route path="/grades" element={<PageGrades t={t} />} />
+                <Route path="/timetable" element={<PageTimetable t={t} />} />
+                <Route path="/adddrop" element={<PageAddDrop t={t} goal={addDropGoal} onGoalSelect={(g) => setAddDropGoal(g)} onRequestGoal={() => setShowGoalModal(true)} onCourseDrop={(code) => setDroppedCourses(prev => prev.includes(code) ? prev : [...prev, code])} />} />
+                <Route path="/settings" element={<PageSettings theme={theme} setTheme={setTheme} lang={lang} setLang={setLang} t={t} />} />
+                <Route path="/chatbot" element={<PageChatbot />} />
+                <Route path="/security" element={<PageSecurity onLogout={handleLogout} />} />
+                <Route path="*" element={<PageDashboard />} />
+              </Routes>
+            </div>
           </div>
         </div>
-      </div>
+      </ToastCtx.Provider>
     </LangCtx.Provider>
   );
 }

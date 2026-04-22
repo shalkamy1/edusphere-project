@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import React from 'react';
 import { useLang } from '../App.jsx';
 
@@ -33,7 +34,8 @@ const SS_SERVICES = [
     { Ic: SvgRequests, name: "requests", color: "#aa00ff", page: "requests" },
 ];
 
-export default function PageStudentServices({ setPage }) {
+export default function PageStudentServices() {
+  const navigate = useNavigate();
     const { t } = useLang();
     const sv = t.services;
     const snames = { medical: sv.medical, complaints: sv.complaints, warning: sv.warning, requests: sv.requests };
@@ -56,7 +58,7 @@ export default function PageStudentServices({ setPage }) {
                 {SS_SERVICES.map(s => {
                     const { Ic } = s;
                     return (
-                        <div key={s.name} className="ss-card" onClick={() => setPage(s.page)}>
+                        <div key={s.name} className="ss-card" onClick={() => navigate('/' + s.page)}>
                             <div className="ss-ic" style={{ color: s.color }}>
                                 <Ic />
                             </div>
