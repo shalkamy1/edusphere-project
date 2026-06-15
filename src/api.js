@@ -113,6 +113,10 @@ export async function login(email, password) {
 
     const data = await response.json();
 
+    if (data.user && data.user.role !== 'student') {
+        throw new ApiError('Access denied. This portal is for students only.', 403);
+    }
+
     // Store token and user data
     saveAuth(data.access_token, data.user);
 
@@ -239,17 +243,33 @@ export async function getStudentRequests(type = null) {
     return await response.json();
 }
 
-/**
- * Create a new Student Request
- * POST /api/v1/student/requests
- */
-export async function createStudentRequest(type, details) {
-    const response = await apiFetch(`/v1/student/requests`, {
-        method: 'POST',
-        body: JSON.stringify({ request_type: type, details }),
-    });
-    if (!response.ok) throw await parseError(response);
-    return await response.json();
+export async function createStudentRequest(type, details, file = null) {
+    const token = getToken();
+    
+    if (file) {
+        const formData = new FormData();
+        formData.append('request_type', type);
+        formData.append('details', details);
+        formData.append('attachment', file);
+        
+        const response = await fetch(`${API_BASE}/v1/student/requests`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+            },
+            body: formData,
+        });
+        if (!response.ok) throw await parseError(response);
+        return await response.json();
+    } else {
+        const response = await apiFetch(`/v1/student/requests`, {
+            method: 'POST',
+            body: JSON.stringify({ request_type: type, details }),
+        });
+        if (!response.ok) throw await parseError(response);
+        return await response.json();
+    }
 }
 
 /**

@@ -654,8 +654,8 @@ body {
 }
 
 .uavt {
-    width: 36px;
-    height: 36px;
+    width: 42px;
+    height: 42px;
     border-radius: 50%;
     background: var(--red-grad);
     color: #fff;
@@ -663,9 +663,18 @@ body {
     align-items: center;
     justify-content: center;
     font-weight: 700;
-    font-size: 13px;
+    font-size: 14px;
     margin-left: 8px;
     box-shadow: 0 4px 10px rgba(244, 67, 54, 0.3);
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+img.uavt {
+    object-fit: cover;
+    object-position: center top;
+    background: #fff;
+    display: block;
 }
 
 [dir="rtl"] .uavt {

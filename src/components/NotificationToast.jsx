@@ -10,6 +10,9 @@ const NOTIF_CONFIG = {
     chat_message:     { icon: '💬', color: '#8b5cf6' },
     recommendation:   { icon: '🎯', color: '#ec4899' },
     at_risk_alert:    { icon: '⚠️', color: '#ef4444' },
+    warning:          { icon: '🚨', color: '#d97706' },
+    academic_warning: { icon: '🚨', color: '#dc2626' },
+    attendance_warning:{ icon: '⏰', color: '#ea580c' },
 };
 
 /**
@@ -51,7 +54,10 @@ function SingleToast({ notif, onDismiss, onNavigate }) {
             announcement:    'dashboard',
             chat_message:    'chatbot',
             recommendation:  'adddrop',
-            at_risk_alert:   'records',
+            at_risk_alert:   'warning',
+            warning:         'warning',
+            academic_warning:'warning',
+            attendance_warning:'warning',
         }[notif.type] || 'dashboard';
         onNavigate?.('/' + page);
     };

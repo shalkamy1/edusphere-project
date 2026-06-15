@@ -11,7 +11,10 @@ const NOTIF_CONFIG = {
     announcement:     { icon: '📢', label: 'Announcement',  color: '#f59e0b', page: 'dashboard'  },
     chat_message:     { icon: '💬', label: 'AI Assistant',  color: '#8b5cf6', page: 'chatbot'   },
     recommendation:   { icon: '🎯', label: 'Recommendation',color: '#ec4899', page: 'adddrop'   },
-    at_risk_alert:    { icon: '⚠️',  label: 'Alert',         color: '#ef4444', page: 'records'   },
+    at_risk_alert:    { icon: '⚠️',  label: 'Alert',         color: '#ef4444', page: 'warning'   },
+    warning:          { icon: '🚨', label: 'Warning',       color: '#d97706', page: 'warning'   },
+    academic_warning: { icon: '🚨', label: 'Academic Warning', color: '#dc2626', page: 'warning' },
+    attendance_warning:{ icon: '⏰', label: 'Attendance Warning', color: '#ea580c', page: 'warning' },
 };
 
 /**

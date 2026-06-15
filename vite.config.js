@@ -9,4 +9,13 @@ export default defineConfig({
         port: 5173,
         allowedHosts: ['edusphere', 'localhost'],
     },
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    vendor: ['react', 'react-dom', 'react-router-dom'],
+                }
+            }
+        }
+    }
 })

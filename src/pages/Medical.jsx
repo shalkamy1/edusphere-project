@@ -16,6 +16,7 @@ export default function PageMedical() {
     // Form state
     const [title, setTitle] = useState('');
     const [details, setDetails] = useState('');
+    const [attachment, setAttachment] = useState(null);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState(null);
 
@@ -41,7 +42,8 @@ export default function PageMedical() {
                     fullDetails: req.details,
                     date: new Date(req.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
                     status: req.status || 'pending',
-                    comment: req.comment
+                    comment: req.comment,
+                    attachmentUrl: req.attachment_url
                 }));
                 mapped.sort((a, b) => b.id - a.id);
                 setExcuses(mapped);
@@ -63,10 +65,11 @@ export default function PageMedical() {
         setError(null);
         try {
             const combinedDetails = `${title}\n\n${details}`;
-            await createStudentRequest('leave', combinedDetails);
+            await createStudentRequest('leave', combinedDetails, attachment);
             setShowForm(false);
             setTitle('');
             setDetails('');
+            setAttachment(null);
             loadData();
             showToast("Medical excuse submitted successfully.", "success");
         } catch (err) {
@@ -147,6 +150,16 @@ export default function PageMedical() {
                                     <p style={{ color: 'var(--t2)', fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
                                         {selected.fullDetails}
                                     </p>
+                                    {selected.attachmentUrl && (
+                                        <div style={{ marginTop: 24 }}>
+                                            <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--t1)', marginBottom: 8 }}>Attached Document</div>
+                                            {selected.attachmentUrl.endsWith('.pdf') ? (
+                                                <a href={selected.attachmentUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>View PDF Document</a>
+                                            ) : (
+                                                <img src={selected.attachmentUrl} alt="Medical Attachment" style={{ maxWidth: '100%', borderRadius: 8, border: '1px solid var(--border)' }} />
+                                            )}
+                                        </div>
+                                    )}
                                     {selected.comment && (
                                         <div style={{ marginTop: 24, padding: 16, background: 'var(--bg)', borderRadius: 12, border: '1px solid var(--border)' }}>
                                             <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--t1)', marginBottom: 6 }}>Admin Comment</div>
@@ -201,6 +214,16 @@ export default function PageMedical() {
                                     value={details}
                                     onChange={e => setDetails(e.target.value)}
                                 ></textarea>
+                            </div>
+
+                            <div>
+                                <div style={{ fontSize: 12, color: 'var(--t3)', fontWeight: 700, marginBottom: 8 }}>ATTACHMENT (OPTIONAL)</div>
+                                <input
+                                    type="file"
+                                    accept="image/*,.pdf"
+                                    onChange={e => setAttachment(e.target.files[0])}
+                                    style={{ width: '100%', padding: '8px 0', color: 'var(--t2)', fontSize: 13 }}
+                                />
                             </div>
 
                             <button type="submit" className="submit-btn-red" disabled={submitting}>

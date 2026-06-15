@@ -11,17 +11,25 @@ const TRANSCRIPT_FALLBACK = [
     { sem: 'Fall 2024', gpa: '3.9', credits: 15, honor: "Dean's List" },
 ];
 
+// Matches backend level thresholds exactly
+function getLevelFromCredits(credits) {
+    if (credits >= 107) return { num: 4, label: 'Senior' };
+    if (credits >= 71)  return { num: 3, label: 'Junior' };
+    if (credits >= 34)  return { num: 2, label: 'Sophomore' };
+    return { num: 1, label: 'Freshman' };
+}
+
 export default function PageRecords() {
     const navigate = useNavigate();
     const { t } = useLang();
     const r = t.records;
     const user = getStoredUser();
     const fullName = user?.name || 'Student Name';
-    const stdId = user?.student_id || 'N/A';
 
     const [cgpaData, setCgpaData] = useState({ cgpa: '0.00', credits: 0, totalRequired: 120 });
     const [transcript, setTranscript] = useState(TRANSCRIPT_FALLBACK);
     const [profileData, setProfileData] = useState({
+        code: '—',
         faculty: '—',
         program: '—',
         level: '—',
@@ -36,7 +44,8 @@ export default function PageRecords() {
                 if (res.success && res.data) {
                     const st = res.data.student || {};
                     setProfileData({
-                        faculty: res.data.faculty || st.faculty || 'Engineering & Technology',
+                        code: st.code || '—',
+                        faculty: res.data.faculty || st.faculty || 'Business Technology',
                         program: st.program || '—',
                         level: st.level ? `Level ${st.level}` : '—',
                         isHonor: !!st.is_honor,
@@ -53,7 +62,7 @@ export default function PageRecords() {
                     if (res && res.data) {
                         setCgpaData({
                             cgpa: parseFloat(res.data.cgpa || 0).toFixed(2),
-                            credits: res.data.total_credits || 0,
+                            credits: res.data.total_credits ?? 0,
                             totalRequired: res.data.total_required_credits || 120,
                         });
                     }
@@ -78,12 +87,14 @@ export default function PageRecords() {
     }, [user?.student_id]);
 
     const infoRows = [
-        { icon: '🏛️', lbl: r.faculty || 'FACULTY',  val: profileData.faculty },
-        { icon: '📚', lbl: r.program || 'PROGRAM',  val: profileData.program },
-        { icon: '🎓', lbl: r.year    || 'YEAR',     val: profileData.level },
-        { icon: '⭐', lbl: r.gpa     || 'CUMULATIVE GPA', val: `${cgpaData.cgpa} / 4.0` },
-        { icon: '📋', lbl: r.credits || 'CREDITS',  val: `${cgpaData.credits} / ${cgpaData.totalRequired}` },
+        { icon: '🏛️', lbl: r.faculty || 'FACULTY', val: 'Business Technology' },
+        { icon: '📚', lbl: r.program || 'PROGRAM', val: profileData.program },
+        { icon: '🎓', lbl: r.year || 'YEAR', val: (() => { const lv = getLevelFromCredits(cgpaData.credits); return `Level ${lv.num} — ${lv.label}`; })() },
+        { icon: '⭐', lbl: r.gpa || 'CUMULATIVE GPA', val: `${cgpaData.cgpa} / 4.0` },
+        { icon: '📋', lbl: r.credits || 'CREDITS', val: `${cgpaData.credits} / ${cgpaData.totalRequired}` },
     ];
+
+    const stdCode = profileData.code !== '—' ? profileData.code : (user?.student_code || 'N/A');
 
     return (
         <div className="page-enter">
@@ -105,17 +116,17 @@ export default function PageRecords() {
                 <div className="rec-profile-card">
                     <div className="rec-av" style={{ overflow: 'hidden', padding: user?.profile_picture_url ? 0 : '', background: user?.profile_picture_url ? 'transparent' : '' }}>
                         {user?.profile_picture_url ? (
-                            <img 
-                                src={user.profile_picture_url} 
-                                alt="Profile" 
-                                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                            <img
+                                src={user.profile_picture_url}
+                                alt="Profile"
+                                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', display: 'block' }}
                                 onError={(e) => {
                                     e.currentTarget.style.display = 'none';
                                     e.currentTarget.nextElementSibling.style.display = 'block';
-                                }} 
+                                }}
                             />
                         ) : null}
-                        <svg 
+                        <svg
                             style={{ display: user?.profile_picture_url ? 'none' : 'block' }}
                             width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
                         >
@@ -123,7 +134,7 @@ export default function PageRecords() {
                         </svg>
                     </div>
                     <div className="rec-name">{fullName}</div>
-                    <div className="rec-id">ID: {stdId}</div>
+                    <div className="rec-id">ID: {stdCode}</div>
 
                     <div className="rec-info-rows">
                         {profileData.loading ? (

@@ -1,22 +1,26 @@
-import React, { useState, useEffect, useRef, createContext, useContext, useCallback } from 'react';
+import React, { useState, useEffect, useRef, createContext, useContext, useCallback, useMemo, Suspense } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { logout as apiLogout, getToken, getStoredUser, clearAuth, getCurrentUser, saveAuth, getProfile } from './api.js';
 import { TRANSLATIONS } from './i18n.js';
 import NotificationBell from './components/NotificationBell.jsx';
 import NotificationToast from './components/NotificationToast.jsx';
-import PageDashboard from './pages/Dashboard.jsx';
-import PageAttendance from './pages/Attendance.jsx';
-import PageStudentServices from './pages/StudentServices.jsx';
-import PageMedical from './pages/Medical.jsx';
-import PageComplaints from './pages/Complaints.jsx';
-import PageWarning from './pages/Warning.jsx';
-import PageRequests from './pages/Requests.jsx';
-import PageCurriculum from './pages/Curriculum.jsx';
-import PageRecords from './pages/Records.jsx';
-import PageLogin from './pages/Login.jsx';
-import PageSecurity from './pages/Security.jsx';
-import PageChatbot from './pages/Chatbot.jsx';
-import { PageGrades, PageTimetable, PageAddDrop, PageSettings } from './pages.jsx';
+
+const PageDashboard = React.lazy(() => import('./pages/Dashboard.jsx'));
+const PageAttendance = React.lazy(() => import('./pages/Attendance.jsx'));
+const PageStudentServices = React.lazy(() => import('./pages/StudentServices.jsx'));
+const PageMedical = React.lazy(() => import('./pages/Medical.jsx'));
+const PageComplaints = React.lazy(() => import('./pages/Complaints.jsx'));
+const PageWarning = React.lazy(() => import('./pages/Warning.jsx'));
+const PageRequests = React.lazy(() => import('./pages/Requests.jsx'));
+const PageCurriculum = React.lazy(() => import('./pages/Curriculum.jsx'));
+const PageRecords = React.lazy(() => import('./pages/Records.jsx'));
+const PageLogin = React.lazy(() => import('./pages/Login.jsx'));
+const PageSecurity = React.lazy(() => import('./pages/Security.jsx'));
+const PageChatbot = React.lazy(() => import('./pages/Chatbot.jsx'));
+const PageGrades = React.lazy(() => import('./pages/Grades.jsx'));
+const PageTimetable = React.lazy(() => import('./pages/Timetable.jsx'));
+const PageAddDrop = React.lazy(() => import('./pages/AddDrop.jsx'));
+const PageSettings = React.lazy(() => import('./pages/Settings.jsx'));
 
 export const LangCtx = createContext({ t: TRANSLATIONS.en, lang: 'en', setLang: () => { } });
 export const useLang = () => useContext(LangCtx);
@@ -391,9 +395,11 @@ function Topbar({ theme, setTheme, lang, userInfo, userId, onNewNotif, onHamburg
             <img
               src={userInfo.profile_picture_url}
               className="uavt"
-              style={{ padding: 0, objectFit: 'cover', background: 'white', borderRadius: '50%' }}
               alt="Avatar"
-              onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex'; }}
+              onError={e => {
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.nextSibling.style.display = 'flex';
+              }}
             />
           ) : null}
           <div className="uavt" style={{ display: userInfo?.profile_picture_url ? 'none' : 'flex' }}>{initials}</div>
@@ -434,11 +440,11 @@ export default function App() {
     setNotifToasts(prev => [notif, ...prev].slice(0, 3));
   }, []);
 
-  const showToast = (msg, type = 'info') => {
+  const showToast = useCallback((msg, type = 'info') => {
     const id = Date.now() + Math.random();
     setToasts(prev => [...prev, { id, msg, type }]);
     setTimeout(() => { setToasts(prev => prev.filter(t => t.id !== id)); }, 4000);
-  };
+  }, []);
 
   const [authLoading, setAuthLoading] = useState(true);
 
@@ -520,22 +526,27 @@ export default function App() {
     } catch (_) { }
   };
 
-  const handleLogout = () => { setLoggedIn(false); setUserInfo(null); navigate('/dashboard'); };
-  const handleLogin = (info) => { setUserInfo(info); setLoggedIn(true); };
+  const handleLogout = useCallback(() => { setLoggedIn(false); setUserInfo(null); navigate('/dashboard'); }, [navigate]);
+  const handleLogin = useCallback((info) => { setUserInfo(info); setLoggedIn(true); }, []);
+
+  const langCtxValue = useMemo(() => ({ t, lang, setLang }), [t, lang]);
+  const toastCtxValue = useMemo(() => ({ showToast }), [showToast]);
 
   if (authLoading) return null;
 
   if (!loggedIn) {
     return (
-      <LangCtx.Provider value={{ t, lang, setLang }}>
-        <PageLogin onLogin={handleLogin} />
+      <LangCtx.Provider value={langCtxValue}>
+        <Suspense fallback={<div style={{display:'flex',justifyContent:'center',alignItems:'center',height:'100vh',color:'var(--t3)'}}>Loading...</div>}>
+          <PageLogin onLogin={handleLogin} />
+        </Suspense>
       </LangCtx.Provider>
     );
   }
 
   return (
-    <LangCtx.Provider value={{ t, lang, setLang }}>
-      <ToastCtx.Provider value={{ showToast }}>
+    <LangCtx.Provider value={langCtxValue}>
+      <ToastCtx.Provider value={toastCtxValue}>
         <div className="app">
           {sidebarOpen && <div className="sidebar-overlay visible" onClick={() => setSidebarOpen(false)} />}
           {showGoalModal && (
@@ -560,25 +571,27 @@ export default function App() {
               onNavigate={navigate}
             />
             <div className="pbody" key={page}>
-              <Routes>
-                <Route path="/" element={<PageDashboard />} />
-                <Route path="/dashboard" element={<PageDashboard />} />
-                <Route path="/attendance" element={<PageAttendance />} />
-                <Route path="/students" element={<PageStudentServices />} />
-                <Route path="/curriculum" element={<PageCurriculum droppedCourses={droppedCourses} failedCourses={failedCourses} />} />
-                <Route path="/records" element={<PageRecords />} />
-                <Route path="/medical" element={<PageMedical />} />
-                <Route path="/complaints" element={<PageComplaints />} />
-                <Route path="/warning" element={<PageWarning />} />
-                <Route path="/requests" element={<PageRequests />} />
-                <Route path="/grades" element={<PageGrades t={t} />} />
-                <Route path="/timetable" element={<PageTimetable t={t} />} />
-                <Route path="/adddrop" element={<PageAddDrop t={t} goal={addDropGoal} onGoalSelect={(g) => setAddDropGoal(g)} onRequestGoal={() => setShowGoalModal(true)} onCourseDrop={(code) => setDroppedCourses(prev => prev.includes(code) ? prev : [...prev, code])} />} />
-                <Route path="/settings" element={<PageSettings theme={theme} setTheme={setTheme} lang={lang} setLang={setLang} t={t} />} />
-                <Route path="/chatbot" element={<PageChatbot />} />
-                <Route path="/security" element={<PageSecurity onLogout={handleLogout} />} />
-                <Route path="*" element={<PageDashboard />} />
-              </Routes>
+              <Suspense fallback={<div style={{display:'flex',justifyContent:'center',alignItems:'center',height:'100%',color:'var(--t3)'}}>Loading page...</div>}>
+                <Routes>
+                  <Route path="/" element={<PageDashboard />} />
+                  <Route path="/dashboard" element={<PageDashboard />} />
+                  <Route path="/attendance" element={<PageAttendance />} />
+                  <Route path="/students" element={<PageStudentServices />} />
+                  <Route path="/curriculum" element={<PageCurriculum droppedCourses={droppedCourses} failedCourses={failedCourses} />} />
+                  <Route path="/records" element={<PageRecords />} />
+                  <Route path="/medical" element={<PageMedical />} />
+                  <Route path="/complaints" element={<PageComplaints />} />
+                  <Route path="/warning" element={<PageWarning />} />
+                  <Route path="/requests" element={<PageRequests />} />
+                  <Route path="/grades" element={<PageGrades t={t} />} />
+                  <Route path="/timetable" element={<PageTimetable t={t} />} />
+                  <Route path="/adddrop" element={<PageAddDrop t={t} goal={addDropGoal} onGoalSelect={(g) => setAddDropGoal(g)} onRequestGoal={() => setShowGoalModal(true)} onCourseDrop={(code) => setDroppedCourses(prev => prev.includes(code) ? prev : [...prev, code])} />} />
+                  <Route path="/settings" element={<PageSettings theme={theme} setTheme={setTheme} lang={lang} setLang={setLang} t={t} />} />
+                  <Route path="/chatbot" element={<PageChatbot />} />
+                  <Route path="/security" element={<PageSecurity onLogout={handleLogout} />} />
+                  <Route path="*" element={<PageDashboard />} />
+                </Routes>
+              </Suspense>
             </div>
           </div>
         </div>

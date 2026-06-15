@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLang, useToast } from '../App.jsx';
 import { getStudentRequests, createStudentRequest } from '../api.js';
 
@@ -22,6 +22,8 @@ export default function PageComplaints() {
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState(null);
+    const [file, setFile] = useState(null);
+    const fileInputRef = useRef(null);
 
     useEffect(() => {
         loadData();
@@ -48,7 +50,8 @@ export default function PageComplaints() {
                         title: title,
                         status: req.status || 'pending',
                         date: `Submitted on ${new Date(req.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}`,
-                        response: req.comment || null
+                        response: req.comment || null,
+                        attachmentUrl: req.attachment_url || null
                     };
                 });
                 mapped.sort((a,b) => b.id - a.id);
@@ -70,9 +73,11 @@ export default function PageComplaints() {
         setSubmitting(true);
         try {
             const details = `[${cat}]\n${msg}`;
-            await createStudentRequest('complaint', details);
+            await createStudentRequest('complaint', details, file);
             setMsg('');
             setCat('Academic');
+            setFile(null);
+            if (fileInputRef.current) fileInputRef.current.value = '';
             loadData(); // reload
             showToast("Complaint submitted successfully.", "success");
         } catch (err) {
@@ -121,7 +126,7 @@ export default function PageComplaints() {
                         />
                     </div>
 
-                    <div style={{ display: 'flex', gap: 10 }}>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                         <button 
                             className="submit-btn-red" 
                             style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
@@ -130,8 +135,36 @@ export default function PageComplaints() {
                         >
                             <span>📤</span> {submitting ? 'Submitting...' : 'Submit Complaint'}
                         </button>
-                        <button className="cmp-attach-btn">📎</button>
+                        <button 
+                            className="cmp-attach-btn" 
+                            onClick={() => fileInputRef.current.click()}
+                            title="Attach file"
+                        >
+                            📎
+                        </button>
+                        <input 
+                            type="file" 
+                            style={{ display: 'none' }} 
+                            ref={fileInputRef} 
+                            onChange={e => setFile(e.target.files[0] || null)}
+                            accept=".jpeg,.png,.jpg,.pdf"
+                        />
                     </div>
+                    {file && (
+                        <div style={{ fontSize: 12, color: 'var(--t2)', marginTop: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span>📄</span> <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.name}</span>
+                            <button 
+                                onClick={() => {
+                                    setFile(null);
+                                    if (fileInputRef.current) fileInputRef.current.value = '';
+                                }} 
+                                style={{ background: 'none', border: 'none', color: 'var(--red)', cursor: 'pointer', fontSize: 14, padding: 0 }}
+                                title="Remove file"
+                            >
+                                ✖
+                            </button>
+                        </div>
+                    )}
 
                     <p style={{ fontSize: 11, color: 'var(--t3)', marginTop: 14, lineHeight: 1.5, fontStyle: 'italic' }}>
                         All complaints are treated with strict confidentiality and will be addressed by the relevant department within 3-5 working days.
@@ -160,7 +193,14 @@ export default function PageComplaints() {
                                         </div>
                                         <span style={{ fontSize: 11, fontWeight: 800, color: st.color }}>{st.label}</span>
                                     </div>
-                                    <div style={{ fontSize: 12, color: 'var(--t3)', marginBottom: h.response ? 12 : 0 }}>{h.date}</div>
+                                    <div style={{ fontSize: 12, color: 'var(--t3)', marginBottom: (h.response || h.attachmentUrl) ? 12 : 0 }}>{h.date}</div>
+                                    {h.attachmentUrl && (
+                                        <div style={{ marginBottom: h.response ? 12 : 0 }}>
+                                            <a href={h.attachmentUrl} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: '#2196f3', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(33, 150, 243, 0.1)', padding: '4px 8px', borderRadius: 4 }}>
+                                                <span>📎</span> View Attachment
+                                            </a>
+                                        </div>
+                                    )}
                                     {h.response && (
                                         <div className="cmp-response">
                                             <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--red)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>Official Response</div>

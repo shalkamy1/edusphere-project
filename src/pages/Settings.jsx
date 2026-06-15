@@ -218,8 +218,9 @@ export default function PageSettings({ theme, setTheme, lang, setLang, t }) {
     <div className="page-enter">
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
-        .set-pic-wrap { position: relative; width: 80px; height: 80px; flex-shrink: 0; }
-        .set-pic-wrap img, .set-avatar { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 800; color: #fff; background: linear-gradient(135deg,#e53935,#c62828); }
+        .set-pic-wrap { position: relative; width: 84px; height: 84px; flex-shrink: 0; }
+        .set-pic-wrap img, .set-avatar { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; object-position: center top; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 800; color: #fff; background: linear-gradient(135deg,#e53935,#c62828); }
+        .set-pic-wrap img { display: block; }
         .pw-strength-bar { height: 4px; border-radius: 4px; background: var(--border); overflow: hidden; margin-top: 6px; }
         .pw-strength-fill { height: 100%; border-radius: 4px; transition: width .3s, background .3s; }
         .profile-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
