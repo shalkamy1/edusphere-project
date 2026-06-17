@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
 import { useLang } from '../App.jsx';
-import { getStoredUser, getStudentCGPA, getStudentTranscript, getProfile } from '../api.js';
+import { getStoredUser, getStudentCGPA, getStudentTranscript, getProfile, getAssetUrl } from '../api.js';
 
 const TRANSCRIPT_FALLBACK = [
     { sem: 'Fall 2022', gpa: '3.8', credits: 18, honor: "Dean's List" },
@@ -117,7 +117,7 @@ export default function PageRecords() {
                     <div className="rec-av" style={{ overflow: 'hidden', padding: user?.profile_picture_url ? 0 : '', background: user?.profile_picture_url ? 'transparent' : '' }}>
                         {user?.profile_picture_url ? (
                             <img
-                                src={user.profile_picture_url}
+                                src={getAssetUrl(user.profile_picture_url)}
                                 alt="Profile"
                                 style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', display: 'block' }}
                                 onError={(e) => {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, createContext, useContext, useCallback, useMemo, Suspense } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { logout as apiLogout, getToken, getStoredUser, clearAuth, getCurrentUser, saveAuth, getProfile } from './api.js';
+import { logout as apiLogout, getToken, getStoredUser, clearAuth, getCurrentUser, saveAuth, getProfile, getAssetUrl } from './api.js';
 import { TRANSLATIONS } from './i18n.js';
 import NotificationBell from './components/NotificationBell.jsx';
 import NotificationToast from './components/NotificationToast.jsx';
@@ -393,7 +393,7 @@ function Topbar({ theme, setTheme, lang, userInfo, userId, onNewNotif, onHamburg
         <div className="tb-user">
           {userInfo?.profile_picture_url ? (
             <img
-              src={userInfo.profile_picture_url}
+              src={getAssetUrl(userInfo.profile_picture_url)}
               className="uavt"
               alt="Avatar"
               onError={e => {

@@ -8,6 +8,7 @@ import {
   getStudentCGPA,
   saveAuth,
   getToken,
+  getAssetUrl,
 } from '../api.js';
 
 /* ── small icon helpers ─────────────────────────────────── */
@@ -121,7 +122,7 @@ export default function PageSettings({ theme, setTheme, lang, setLang, t }) {
         if (res.success) {
           setProfile(res.data);
           setEditName(res.data.name);
-          setLocalPicUrl(res.data.profile_picture_url);
+          setLocalPicUrl(getAssetUrl(res.data.profile_picture_url));
           // load academic info if student
           if (res.data.student) {
             setAcadInfo(prev => ({

@@ -2,8 +2,7 @@
  * EduSphere API Service
  * Connects frontend to Laravel backend (Sanctum token-based auth)
  */
-
-const API_BASE = 'http://localhost:8000/api';
+const API_BASE = 'https://tighten-epidermal-hug.ngrok-free.dev/api';
 
 /**
  * Get the stored auth token from localStorage
@@ -41,6 +40,17 @@ export function getStoredUser() {
 }
 
 /**
+ * Fix asset URLs for localhost development bypassing ngrok warning
+ */
+export function getAssetUrl(url) {
+    if (!url) return '';
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return url.replace(/^https?:\/\/[^\/]+\.ngrok-free\.dev/, 'http://localhost:8000');
+    }
+    return url;
+}
+
+/**
  * Make an authenticated API request
  */
 async function apiFetch(endpoint, options = {}) {
@@ -48,6 +58,7 @@ async function apiFetch(endpoint, options = {}) {
     const headers = {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        'ngrok-skip-browser-warning': '69420', // Add this to bypass ngrok warning for API
         ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         ...(options.headers || {}),
     };

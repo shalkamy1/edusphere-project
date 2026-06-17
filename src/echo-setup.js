@@ -43,7 +43,7 @@ try {
          * Laravel Sanctum sends the Bearer token in the Authorization header.
          * The backend's /api/broadcasting/auth route uses this to verify channel access.
          */
-        authEndpoint: 'http://localhost:8000/api/broadcasting/auth',
+        authEndpoint: 'https://tighten-epidermal-hug.ngrok-free.dev/api/broadcasting/auth',
         auth: {
             headers: {
                 // Get the Sanctum token from localStorage
